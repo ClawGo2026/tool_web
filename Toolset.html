@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="toolset/css/table.css">
   <link rel="stylesheet" href="toolset/css/linechart.css">
   <link rel="stylesheet" href="toolset/css/piechart.css">
+  <link rel="stylesheet" href="toolset/css/bubblechart.css">
 </head>
 <body>
 
@@ -21,6 +22,7 @@
   <button class="tab-btn active" data-tab="histogram">📊 直方图</button>
   <button class="tab-btn" data-tab="linechart">📈 折线图</button>
   <button class="tab-btn" data-tab="piechart">🥧 饼图</button>
+  <button class="tab-btn" data-tab="bubblechart">🫧 气泡图</button>
   <button class="tab-btn" data-tab="table">📋 表格</button>
 </div>
 
@@ -252,6 +254,76 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════
+     BUBBLECHART PANEL — IDs with 'b' prefix
+     ═══════════════════════════════════════════════ -->
+<div id="bubblechart-panel" class="container" style="display:none">
+  <!-- Input Panel -->
+  <div class="panel panel-input">
+    <div class="panel-title">数据输入</div>
+    <textarea id="bJsonInput" placeholder='输入 JSON 对象，例如：
+{
+  "苹果": 35,
+  "香蕉": 28,
+  "橙子": 42,
+  "葡萄": 15,
+  "西瓜": 50
+}'></textarea>
+    <div class="error-msg" id="bErrorMsg"></div>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="renderBubbleChart()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        生成图表
+      </button>
+      <button class="btn btn-sample" onclick="loadBSample()">📊 示例数据</button>
+    </div>
+    <div class="unit-row">
+      <label>图表标题：</label>
+      <input type="text" class="text-input" id="bTitleInput" placeholder="如：2024年水果销量" oninput="onBTitleChange()">
+    </div>
+
+    <div class="palette-section">
+      <div class="palette-label">配色方案</div>
+      <div class="palette-grid" id="bPaletteGrid"></div>
+    </div>
+    <div class="layout-section">
+      <div class="layout-label">布局算法</div>
+      <div class="layout-grid" id="bLayoutGrid"></div>
+    </div>
+  </div>
+
+  <!-- Chart Panel -->
+  <div class="panel panel-chart">
+    <div class="panel-title">气泡图</div>
+    <div class="chart-toolbar" id="bChartToolbar" style="display:none;">
+      <button class="toolbar-btn" onclick="toggleFullscreen()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        全屏展示
+      </button>
+    </div>
+    <div class="chart-wrapper" id="bChartWrapper">
+      <div class="empty-state" id="bEmptyState">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <p>输入数据后点击「生成图表」</p>
+      </div>
+      <canvas id="bCanvas" style="display:none;"></canvas>
+      <div class="tooltip" id="bTooltip">
+        <div class="tt-label" id="bTtLabel"></div>
+        <div class="tt-value" id="bTtValue"></div>
+      </div>
+      <div class="chart-disclaimer" id="bChartDisclaimer" style="display:none;">* 数据来源于网络，仅供参考</div>
+    </div>
+    <div class="stats" id="bStatsBar" style="display:none;">
+      <div class="stat-item"><div class="stat-value" id="bStatCount">-</div><div class="stat-label">数据量</div></div>
+      <div class="stat-item"><div class="stat-value" id="bStatMax">-</div><div class="stat-label">最大值</div></div>
+      <div class="stat-item"><div class="stat-value" id="bStatMin">-</div><div class="stat-label">最小值</div></div>
+      <div class="stat-item"><div class="stat-value" id="bStatAvg">-</div><div class="stat-label">平均值</div></div>
+      <div class="stat-item"><div class="stat-value" id="bStatSum">-</div><div class="stat-label">总和</div></div>
+      <div class="stat-item"><div class="stat-value" id="bStatLayout">-</div><div class="stat-label">布局</div></div>
+    </div>
+  </div>
+</div>
+
 	<!-- ═══════════════════════════════════════════════
 	     TABLE PANEL — IDs renamed with 't' prefix
 	     ═══════════════════════════════════════════════ -->
@@ -342,10 +414,13 @@
 <script src="toolset/data/line-styles.js"></script>
 <script src="toolset/data/p-palettes.js"></script>
 <script src="toolset/data/pie-styles.js"></script>
+<script src="toolset/data/b-palettes.js"></script>
+<script src="toolset/data/layout-algorithms.js"></script>
 <script src="toolset/js/histogram.js"></script>
 <script src="toolset/js/table.js"></script>
 <script src="toolset/js/linechart.js"></script>
 <script src="toolset/js/piechart.js"></script>
+<script src="toolset/js/bubblechart.js"></script>
 <script src="toolset/js/core.js"></script>
 
 </body>
