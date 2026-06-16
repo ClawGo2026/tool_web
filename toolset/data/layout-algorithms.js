@@ -121,7 +121,7 @@ function layoutCircular(bubbles, canvasW, canvasH) {
   for (let i = 1; i < sorted.length; i++) {
     const b = sorted[i];
     const angle = i * goldenAngle;
-    const r = Math.sqrt(i / sorted.length) * maxRadius;
+    let r = Math.sqrt(i / sorted.length) * maxRadius;
 
     let x = centerX + r * Math.cos(angle);
     let y = centerY + r * Math.sin(angle);
