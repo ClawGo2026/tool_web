@@ -1,4 +1,4 @@
-import { currentTool, setCurrentTool, isFullscreen } from './state.js';
+import { setCurrentTool, isFullscreen } from './state.js';
 
 // Import exit functions from all chart modules
 import { exitFsHistogram } from './histogram/index.js';
