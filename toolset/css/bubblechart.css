@@ -1,0 +1,87 @@
+/* ── Bubble Chart Styles ── */
+
+/* Layout selector section */
+.layout-section {
+  margin-top: 14px;
+}
+
+.layout-label {
+  font-size: .78rem;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+}
+
+.layout-card {
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.layout-card:hover {
+  border-color: rgba(255,255,255,.15);
+}
+
+.layout-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.layout-name {
+  font-size: .65rem;
+  color: var(--text2);
+  text-align: center;
+}
+
+.layout-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* Bubble chart specific canvas styles */
+#bChartWrapper {
+  position: relative;
+  min-height: 300px;
+}
+
+#bCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Tooltip already styled in theme.css, just ensure bubble chart tooltip works */
+#bTooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: .78rem;
+  box-shadow: var(--shadow);
+  z-index: 100;
+  display: none;
+}
+
+#bTtLabel {
+  font-weight: 600;
+  color: var(--text);
+}
+
+#bTtValue {
+  color: var(--text2);
+  font-size: .72rem;
+}
