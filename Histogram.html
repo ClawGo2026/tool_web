@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON 直方图生成器</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3348;
+    --text: #e4e6f0;
+    --text2: #8b8fa8;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00cec9;
+    --red: #ff6b6b;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .header { text-align:center; margin-bottom:24px; }
+  .header h1 {
+    font-size:1.5rem; font-weight:700;
+    background:linear-gradient(135deg,var(--accent2),var(--green));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:4px;
+  }
+  .header p { color:var(--text2); font-size:.82rem; }
+
+  .container {
+    max-width:1200px; margin:0 auto;
+    display:flex; flex-direction:column; gap:20px;
+  }
+  @media(min-width:768px){
+    .container{flex-direction:row;}
+    .panel-input{width:360px;flex-shrink:0;}
+    .panel-chart{flex:1;min-width:0;}
+  }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+  }
+  .panel-title{
+    font-size:.78rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text2); margin-bottom:14px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .panel-title::before{
+    content:''; width:3px; height:14px;
+    background:var(--accent); border-radius:2px;
+  }
+
+  textarea{
+    width:100%; height:200px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:8px;
+    color:var(--text); font-family:'JetBrains Mono','Fira Code',monospace;
+    font-size:.82rem; padding:14px; resize:vertical; outline:none;
+    transition:border-color .2s; line-height:1.5;
+  }
+  textarea:focus{border-color:var(--accent);}
+  textarea::placeholder{color:var(--text2);opacity:.6;}
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px;
+    margin-top:14px; align-items:center;
+  }
+  .btn{
+    padding:8px 16px; border:none; border-radius:8px;
+    font-size:.82rem; font-weight:600; cursor:pointer;
+    transition:all .2s; display:flex; align-items:center; gap:6px;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),#845ef7); color:#fff;
+  }
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(108,92,231,.4);}
+  .btn-outline{
+    background:transparent; border:1px solid var(--border); color:var(--text2);
+  }
+  .btn-outline:hover,.btn-outline.active{
+    border-color:var(--accent); color:var(--accent2);
+    background:rgba(108,92,231,.08);
+  }
+  .btn-sample{
+    background:transparent; border:1px dashed var(--border);
+    color:var(--text2); font-size:.78rem;
+  }
+  .btn-sample:hover{border-color:var(--green);color:var(--green);}
+
+  .dir-toggle{
+    display:flex; background:var(--surface2);
+    border-radius:8px; overflow:hidden; border:1px solid var(--border);
+  }
+  .dir-toggle .btn{border-radius:0;border:none;padding:7px 14px;font-size:.78rem;}
+  .dir-toggle .btn.active{background:var(--accent);color:#fff;}
+
+  /* Unit input */
+  .unit-row{
+    display:flex; align-items:center; gap:8px; margin-top:12px;
+  }
+  .unit-row label{font-size:.78rem;color:var(--text2);white-space:nowrap;}
+  .text-input{
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-size:.82rem;
+    padding:7px 12px; outline:none; transition:border-color .2s;
+  }
+  .text-input:focus{border-color:var(--accent);}
+
+  /* Color palette picker */
+  .palette-section{margin-top:14px;}
+  .palette-label{font-size:.78rem;color:var(--text2);margin-bottom:8px;}
+  .palette-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));
+    gap:8px;
+  }
+  .palette-card{
+    border:2px solid transparent; border-radius:8px;
+    padding:6px 8px; cursor:pointer; transition:all .2s;
+    background:var(--surface2); display:flex; flex-direction:column; gap:4px;
+  }
+  .palette-card:hover{border-color:rgba(255,255,255,.15);}
+  .palette-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+  .palette-name{font-size:.68rem;color:var(--text2);text-align:center;}
+  .palette-dots{
+    display:flex; gap:3px; justify-content:center;
+  }
+  .palette-dot{
+    width:14px; height:14px; border-radius:4px;
+  }
+
+  /* Bar style picker */
+  .barstyle-section{margin-top:14px;}
+  .barstyle-label{font-size:.78rem;color:var(--text2);margin-bottom:8px;}
+  .barstyle-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(80px, 1fr));
+    gap:6px;
+  }
+  .barstyle-card{
+    border:2px solid transparent; border-radius:8px;
+    padding:8px 6px; cursor:pointer; transition:all .2s;
+    background:var(--surface2); display:flex; flex-direction:column;
+    align-items:center; gap:4px;
+  }
+  .barstyle-card:hover{border-color:rgba(255,255,255,.15);}
+  .barstyle-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+  .barstyle-name{font-size:.65rem;color:var(--text2);text-align:center;}
+  .barstyle-icon{width:28px;height:20px;}
+
+  .error-msg{color:var(--red);font-size:.78rem;margin-top:8px;min-height:1.2em;}
+
+  /* Chart area */
+  .chart-wrapper{position:relative;min-height:300px;}
+  #chartCanvas{width:100%;height:auto;display:block;}
+
+  /* Chart toolbar */
+  .chart-toolbar{
+    display:flex; justify-content:flex-end; gap:8px;
+    margin-bottom:10px;
+  }
+  .toolbar-btn{
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; color:var(--text2); padding:6px 12px;
+    font-size:.75rem; cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:5px;
+  }
+  .toolbar-btn:hover{border-color:var(--accent);color:var(--accent2);}
+
+  /* Unit badge on chart — styled dynamically via JS */
+  .unit-badge{
+    position:absolute; right:12px;
+    border-radius:6px; padding:4px 10px;
+    font-size:.75rem; font-weight:600;
+    pointer-events:none; backdrop-filter:blur(4px);
+    display:none; transition: all .3s;
+  }
+
+  /* Stats */
+  .stats{
+    display:flex; flex-wrap:wrap; gap:16px;
+    margin-top:16px; padding-top:16px;
+    border-top:1px solid var(--border);
+  }
+  .stat-item{text-align:center;}
+  .stat-value{font-size:1.1rem;font-weight:700;color:var(--accent2);}
+  .stat-label{font-size:.7rem;color:var(--text2);margin-top:2px;}
+
+  /* Tooltip */
+  .tooltip{
+    position:absolute; background:var(--surface2);
+    border:1px solid var(--border); border-radius:8px;
+    padding:8px 12px; font-size:.78rem;
+    pointer-events:none; opacity:0; transition:opacity .15s;
+    z-index:10; box-shadow:var(--shadow);
+  }
+  .tooltip.show{opacity:1;}
+  .tooltip .tt-label{color:var(--text2);font-size:.7rem;}
+  .tooltip .tt-value{color:var(--accent2);font-weight:700;font-size:.9rem;}
+
+  .chart-disclaimer{
+    position:absolute; bottom:8px; right:12px;
+    font-size:.68rem; color:var(--text2);
+    opacity:.55; letter-spacing:.02em;
+    pointer-events:none;
+  }
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; height:300px; color:var(--text2); gap:12px;
+  }
+  .empty-state svg{opacity:.3;}
+  .empty-state p{font-size:.85rem;}
+
+  /* Fullscreen */
+  .fullscreen-wrapper{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg); padding:20px;
+    display:none; flex-direction:column;
+    overflow:auto;
+  }
+  .fullscreen-wrapper.active{display:flex;}
+  .fullscreen-header{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px; flex-shrink:0;
+    transition: opacity .4s, transform .4s;
+  }
+  .fullscreen-header.auto-hide{
+    opacity:0; transform:translateY(-100%); pointer-events:none;
+  }
+  .fullscreen-header.auto-hide:hover{
+    opacity:1; transform:translateY(0); pointer-events:auto;
+  }
+  .fullscreen-header h2{
+    font-size:1.1rem; color:var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .fullscreen-header h2 .fs-unit{
+    color:var(--accent2); font-weight:400; font-size:.85rem;
+  }
+  .fullscreen-header h2 .fs-title{
+    color:var(--text2); font-weight:400; font-size:.8rem;
+    margin-left:4px;
+  }
+  .btn-close-fs{
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; color:var(--text2); padding:8px 16px;
+    font-size:.82rem; cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn-close-fs:hover{border-color:var(--red);color:var(--red);}
+  .fullscreen-canvas-wrap{
+    flex:1; position:relative; min-height:0;
+  }
+  .fullscreen-canvas-wrap canvas{width:100%;height:100%;display:block;}
+  .fullscreen-canvas-wrap .unit-badge{display:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 JSON 直方图生成器</h1>
+  <p>输入 JSON 数据，一键生成精美直方图</p>
+</div>
+
+<div class="container">
+  <!-- Input Panel -->
+  <div class="panel panel-input">
+    <div class="panel-title">数据输入</div>
+    <textarea id="jsonInput" placeholder='输入 JSON 数组，例如：
+[
+  {"label": "苹果", "value": 35},
+  {"label": "香蕉", "value": 28},
+  {"label": "橙子", "value": 42}
+]
+
+或简单数值数组：
+[12, 45, 23, 67, 34, 89, 56]'></textarea>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="controls">
+      <button class="btn btn-primary" onclick="renderChart()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        生成图表
+      </button>
+      <button class="btn btn-sample" onclick="loadSample()">📊 示例数据</button>
+    </div>
+    <div class="controls" style="margin-top:8px;">
+      <span style="font-size:.78rem;color:var(--text2);">方向：</span>
+      <div class="dir-toggle">
+        <button class="btn active" data-dir="vertical" onclick="setDirection('vertical',this)">垂直 ↑</button>
+        <button class="btn" data-dir="horizontal" onclick="setDirection('horizontal',this)">水平 →</button>
+      </div>
+    </div>
+    <div class="unit-row">
+      <label>图表标题：</label>
+      <input type="text" class="text-input" id="titleInput" placeholder="如：2024年销售数据" oninput="onTitleChange()">
+    </div>
+    <div class="unit-row">
+      <label>数据单位：</label>
+      <input type="text" class="text-input" id="unitInput" placeholder="如：元、kg、次、%" oninput="onUnitChange()">
+    </div>
+
+    <div class="palette-section">
+      <div class="palette-label">配色方案</div>
+      <div class="palette-grid" id="paletteGrid"></div>
+    </div>
+    <div class="barstyle-section">
+      <div class="barstyle-label">柱状图样式</div>
+      <div class="barstyle-grid" id="barstyleGrid"></div>
+    </div>
+  </div>
+
+  <!-- Chart Panel -->
+  <div class="panel panel-chart">
+    <div class="panel-title">直方图</div>
+    <div class="chart-toolbar" id="chartToolbar" style="display:none;">
+      <button class="toolbar-btn" onclick="toggleFullscreen()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        全屏展示
+      </button>
+    </div>
+    <div class="chart-wrapper" id="chartWrapper">
+      <div class="empty-state" id="emptyState">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+        <p>输入数据后点击「生成图表」</p>
+      </div>
+      <canvas id="chartCanvas" style="display:none;"></canvas>
+      <div class="unit-badge" id="unitBadge"></div>
+      <div class="tooltip" id="tooltip">
+        <div class="tt-label" id="ttLabel"></div>
+        <div class="tt-value" id="ttValue"></div>
+      </div>
+      <div class="chart-disclaimer" id="chartDisclaimer" style="display:none;">* 数据来源于网络，仅供参考</div>
+    </div>
+    <div class="stats" id="statsBar" style="display:none;">
+      <div class="stat-item"><div class="stat-value" id="statCount">-</div><div class="stat-label">数据量</div></div>
+      <div class="stat-item"><div class="stat-value" id="statMax">-</div><div class="stat-label">最大值</div></div>
+      <div class="stat-item"><div class="stat-value" id="statMin">-</div><div class="stat-label">最小值</div></div>
+      <div class="stat-item"><div class="stat-value" id="statAvg">-</div><div class="stat-label">平均值</div></div>
+      <div class="stat-item"><div class="stat-value" id="statSum">-</div><div class="stat-label">总和</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div class="fullscreen-wrapper" id="fullscreenWrapper">
+  <div class="fullscreen-header">
+    <h2>📊 直方图 <span class="fs-unit" id="fsUnit"></span> <span class="fs-title" id="fsTitle"></span></h2>
+    <button class="btn-close-fs" onclick="toggleFullscreen()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      退出全屏
+    </button>
+  </div>
+  <div class="fullscreen-canvas-wrap" id="fsCanvasWrap">
+    <canvas id="fsCanvas"></canvas>
+    <div class="unit-badge" id="fsUnitBadge"></div>
+    <div class="chart-disclaimer" id="fsDisclaimer">* 数据来源于网络，仅供参考</div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let direction = 'vertical';
+let chartData = null;
+let barRects = [];
+let currentPalette = 0;
+let currentBarStyle = 0;
+let isFullscreen = false;
+
+// ── Bar Styles ──
+// ── Bar Styles ──
+const BAR_STYLES = [
+  {
+    name: '经典渐变',
+    icon: (c) => `<svg viewBox="0 0 28 20"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${c}"/><stop offset="100%" stop-color="${adjustColor(c,-40)}"/></linearGradient></defs><rect x="1" y="4" width="8" height="15" rx="2" fill="url(#g)"/><rect x="11" y="8" width="8" height="11" rx="2" fill="url(#g)"/><rect x="21" y="1" width="6" height="18" rx="2" fill="url(#g)"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      ctx.fillStyle = 'rgba(0,0,0,.15)';
+      roundRect(ctx, x+2, y+2, w, h, 4); ctx.fill();
+      const grad = isV
+        ? ctx.createLinearGradient(x, y, x, y+h)
+        : ctx.createLinearGradient(x, y, x+w, y);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, adjustColor(color, -30));
+      ctx.fillStyle = grad;
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.15)';
+      if (isV) { roundRect(ctx, x, y, w, Math.min(h,6), 4); ctx.fill(); }
+      else { roundRect(ctx, x+w-Math.min(w,6), y, Math.min(w,6), h, 4); ctx.fill(); }
+    }
+  },
+  {
+    name: '扁平纯色',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="1" fill="${c}"/><rect x="11" y="8" width="8" height="11" rx="1" fill="${c}"/><rect x="21" y="1" width="6" height="18" rx="1" fill="${c}"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, w, h, 3); ctx.fill();
+    }
+  },
+  {
+    name: '胶囊圆角',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="4" fill="${c}"/><rect x="11" y="8" width="8" height="11" rx="4" fill="${c}"/><rect x="21" y="1" width="6" height="18" rx="3" fill="${c}"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const r = Math.min(w, h) / 2;
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, w, h, r); ctx.fill();
+    }
+  },
+  {
+    name: '描边空心',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="2" fill="none" stroke="${c}" stroke-width="1.5"/><rect x="11" y="8" width="8" height="11" rx="2" fill="none" stroke="${c}" stroke-width="1.5"/><rect x="21" y="1" width="6" height="18" rx="2" fill="none" stroke="${c}" stroke-width="1.5"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      roundRect(ctx, x, y, w, h, 4); ctx.stroke();
+      ctx.fillStyle = hexToRgba(color, 0.08);
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+    }
+  },
+  {
+    name: '3D立体',
+    icon: (c) => {
+      const d = adjustColor(c, -35);
+      return `<svg viewBox="0 0 28 20"><polygon points="1,4 9,4 11,2 3,2" fill="${d}"/><rect x="1" y="4" width="8" height="15" fill="${c}"/><polygon points="11,8 19,8 21,6 13,6" fill="${d}"/><rect x="11" y="8" width="8" height="11" fill="${c}"/><polygon points="21,1 27,1 29,-1 23,-1" fill="${d}"/><rect x="21" y="1" width="6" height="18" fill="${c}"/></svg>`;
+    },
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      const depth = Math.max(3, w * 0.2);
+      const dark = adjustColor(color, -40);
+      if (isV) {
+        // side face
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.moveTo(x + w, y);
+        ctx.lineTo(x + w + depth, y - depth);
+        ctx.lineTo(x + w + depth, y + h - depth);
+        ctx.lineTo(x + w, y + h);
+        ctx.closePath(); ctx.fill();
+        // top face
+        ctx.fillStyle = adjustColor(color, 15);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + depth, y - depth);
+        ctx.lineTo(x + w + depth, y - depth);
+        ctx.lineTo(x + w, y);
+        ctx.closePath(); ctx.fill();
+      } else {
+        // bottom face
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.moveTo(x, y + h);
+        ctx.lineTo(x + depth, y + h + depth);
+        ctx.lineTo(x + w + depth, y + h + depth);
+        ctx.lineTo(x + w, y + h);
+        ctx.closePath(); ctx.fill();
+        // top face
+        ctx.fillStyle = adjustColor(color, 15);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + depth, y - depth);
+        ctx.lineTo(x + w + depth, y - depth);
+        ctx.lineTo(x + w, y);
+        ctx.closePath(); ctx.fill();
+      }
+      // front face
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+  },
+  {
+    name: '玻璃质感',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="2" fill="${c}" opacity=".6"/><rect x="1" y="4" width="8" height="7" rx="2" fill="white" opacity=".25"/><rect x="11" y="8" width="8" height="11" rx="2" fill="${c}" opacity=".6"/><rect x="11" y="8" width="8" height="5" rx="2" fill="white" opacity=".25"/><rect x="21" y="1" width="6" height="18" rx="2" fill="${c}" opacity=".6"/><rect x="21" y="1" width="6" height="8" rx="2" fill="white" opacity=".25"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      ctx.fillStyle = 'rgba(0,0,0,.1)';
+      roundRect(ctx, x+1, y+1, w, h, 4); ctx.fill();
+      ctx.fillStyle = hexToRgba(color, 0.55);
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.3)';
+      if (isV) roundRect(ctx, x+2, y+2, w-4, h*0.4, 3);
+      else roundRect(ctx, x+2, y+2, w*0.4, h-4, 3);
+      ctx.fill();
+      ctx.strokeStyle = hexToRgba(color, 0.7);
+      ctx.lineWidth = 1;
+      roundRect(ctx, x, y, w, h, 4); ctx.stroke();
+    }
+  },
+  {
+    name: '条纹填充',
+    icon: (c) => `<svg viewBox="0 0 28 20"><defs><pattern id="s" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="${c}" stroke-width="2"/></pattern></defs><rect x="1" y="4" width="8" height="15" rx="1" fill="${c}" opacity=".3"/><rect x="1" y="4" width="8" height="15" rx="1" fill="url(#s)"/><rect x="11" y="8" width="8" height="11" rx="1" fill="${c}" opacity=".3"/><rect x="11" y="8" width="8" height="11" rx="1" fill="url(#s)"/><rect x="21" y="1" width="6" height="18" rx="1" fill="${c}" opacity=".3"/><rect x="21" y="1" width="6" height="18" rx="1" fill="url(#s)"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      ctx.fillStyle = hexToRgba(color, 0.25);
+      roundRect(ctx, x, y, w, h, 3); ctx.fill();
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 3); ctx.clip();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      const step = 6;
+      const isV = dir === 'vertical';
+      if (isV) {
+        for (let s = -h; s < w + h; s += step) {
+          ctx.beginPath(); ctx.moveTo(x+s, y+h); ctx.lineTo(x+s+h, y); ctx.stroke();
+        }
+      } else {
+        for (let s = -w; s < w + h; s += step) {
+          ctx.beginPath(); ctx.moveTo(x, y+s); ctx.lineTo(x+w, y+s+w); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  },
+  {
+    name: '霓虹发光',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="2" y="5" width="6" height="13" rx="2" fill="${c}" opacity=".2"/><rect x="2" y="5" width="6" height="13" rx="2" fill="none" stroke="${c}" stroke-width="1"/><rect x="12" y="9" width="6" height="9" rx="2" fill="${c}" opacity=".2"/><rect x="12" y="9" width="6" height="9" rx="2" fill="none" stroke="${c}" stroke-width="1"/><rect x="22" y="2" width="4" height="16" rx="2" fill="${c}" opacity=".2"/><rect x="22" y="2" width="4" height="16" rx="2" fill="none" stroke="${c}" stroke-width="1"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      for (let g = 3; g >= 0; g--) {
+        const spread = g * 4;
+        ctx.fillStyle = hexToRgba(color, 0.06 + g * 0.02);
+        roundRect(ctx, x-spread, y-spread, w+spread*2, h+spread*2, 4+spread); ctx.fill();
+      }
+      ctx.fillStyle = hexToRgba(color, 0.85);
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, w, h, 4); ctx.stroke();
+    }
+  },
+  {
+    name: '圆点图案',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="2" fill="${c}" opacity=".2"/><circle cx="3" cy="7" r="1" fill="${c}"/><circle cx="7" cy="7" r="1" fill="${c}"/><circle cx="5" cy="10" r="1" fill="${c}"/><circle cx="3" cy="13" r="1" fill="${c}"/><circle cx="7" cy="13" r="1" fill="${c}"/><circle cx="5" cy="16" r="1" fill="${c}"/><rect x="11" y="8" width="8" height="11" rx="2" fill="${c}" opacity=".2"/><circle cx="13" cy="10" r="1" fill="${c}"/><circle cx="17" cy="10" r="1" fill="${c}"/><circle cx="15" cy="13" r="1" fill="${c}"/><circle cx="13" cy="16" r="1" fill="${c}"/><circle cx="17" cy="16" r="1" fill="${c}"/><rect x="21" y="1" width="6" height="18" rx="2" fill="${c}" opacity=".2"/><circle cx="23" cy="4" r="1" fill="${c}"/><circle cx="25" cy="7" r="1" fill="${c}"/><circle cx="23" cy="10" r="1" fill="${c}"/><circle cx="25" cy="13" r="1" fill="${c}"/><circle cx="23" cy="16" r="1" fill="${c}"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      ctx.fillStyle = hexToRgba(color, 0.18);
+      roundRect(ctx, x, y, w, h, 3); ctx.fill();
+      ctx.fillStyle = color;
+      const r = Math.max(2, Math.min(w, h) * 0.06);
+      const gapX = r * 3.5, gapY = r * 3.5;
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 3); ctx.clip();
+      for (let dy = gapY/2; dy < h; dy += gapY) {
+        for (let dx = gapX/2; dx < w; dx += gapX) {
+          ctx.beginPath();
+          ctx.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+  },
+  {
+    name: '浮雕阴影',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="2" y="5" width="8" height="15" rx="2" fill="rgba(0,0,0,.15)"/><rect x="1" y="4" width="8" height="15" rx="2" fill="${c}"/><rect x="1" y="4" width="8" height="3" rx="2" fill="rgba(255,255,255,.2)"/><rect x="12" y="9" width="8" height="11" rx="2" fill="rgba(0,0,0,.15)"/><rect x="11" y="8" width="8" height="11" rx="2" fill="${c}"/><rect x="11" y="8" width="8" height="3" rx="2" fill="rgba(255,255,255,.2)"/><rect x="22" y="2" width="6" height="18" rx="2" fill="rgba(0,0,0,.15)"/><rect x="21" y="1" width="6" height="18" rx="2" fill="${c}"/><rect x="21" y="1" width="6" height="3" rx="2" fill="rgba(255,255,255,.2)"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      roundRect(ctx, x+3, y+3, w, h, 5); ctx.fill();
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, w, h, 5); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      if (isV) roundRect(ctx, x+2, y+2, w-4, h*0.35, 4);
+      else roundRect(ctx, x+2, y+2, w*0.35, h-4, 4);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,.1)';
+      if (isV) roundRect(ctx, x+2, y+h-h*0.25, w-4, h*0.22, 4);
+      else roundRect(ctx, x+w-w*0.25, y+2, w*0.22, h-4, 4);
+      ctx.fill();
+    }
+  },
+  {
+    name: '双色分割',
+    icon: (c) => {
+      const c2 = adjustColor(c, 40);
+      return `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="7" rx="0" fill="${c}"/><rect x="1" y="11" width="8" height="8" rx="0" fill="${c2}"/><rect x="1" y="4" width="8" height="15" rx="2" fill="none" stroke="rgba(255,255,255,.15)" stroke-width=".5"/><rect x="11" y="8" width="8" height="5" rx="0" fill="${c}"/><rect x="11" y="13" width="8" height="6" rx="0" fill="${c2}"/><rect x="11" y="8" width="8" height="11" rx="2" fill="none" stroke="rgba(255,255,255,.15)" stroke-width=".5"/><rect x="21" y="1" width="6" height="9" rx="0" fill="${c}"/><rect x="21" y="10" width="6" height="9" rx="0" fill="${c2}"/><rect x="21" y="1" width="6" height="18" rx="2" fill="none" stroke="rgba(255,255,255,.15)" stroke-width=".5"/></svg>`;
+    },
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      const c2 = adjustColor(color, 40);
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 4); ctx.clip();
+      if (isV) {
+        const mid = y + h * 0.45;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, mid - y);
+        ctx.fillStyle = c2;
+        ctx.fillRect(x, mid, w, y + h - mid);
+      } else {
+        const mid = x + w * 0.45;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, mid - x, h);
+        ctx.fillStyle = c2;
+        ctx.fillRect(mid, y, x + w - mid, h);
+      }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,.2)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, x, y, w, h, 4); ctx.stroke();
+    }
+  },
+  {
+    name: '内发光',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="2" fill="${c}"/><rect x="3" y="6" width="4" height="11" rx="1" fill="white" opacity=".2"/><rect x="11" y="8" width="8" height="11" rx="2" fill="${c}"/><rect x="13" y="10" width="4" height="7" rx="1" fill="white" opacity=".2"/><rect x="21" y="1" width="6" height="18" rx="2" fill="${c}"/><rect x="22.5" y="3" width="3" height="14" rx="1" fill="white" opacity=".2"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      ctx.fillStyle = color;
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+      const glow = isV
+        ? ctx.createRadialGradient(x+w/2, y+h*0.35, 0, x+w/2, y+h*0.35, Math.max(w,h)*0.5)
+        : ctx.createRadialGradient(x+w*0.35, y+h/2, 0, x+w*0.35, y+h/2, Math.max(w,h)*0.5);
+      glow.addColorStop(0, 'rgba(255,255,255,.3)');
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glow;
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+    }
+  },
+  {
+    name: '渐变边框',
+    icon: (c) => `<svg viewBox="0 0 28 20"><rect x="1" y="4" width="8" height="15" rx="2" fill="none" stroke="${c}" stroke-width="2"/><rect x="1" y="4" width="8" height="15" rx="2" fill="${c}" opacity=".12"/><rect x="11" y="8" width="8" height="11" rx="2" fill="none" stroke="${c}" stroke-width="2"/><rect x="11" y="8" width="8" height="11" rx="2" fill="${c}" opacity=".12"/><rect x="21" y="1" width="6" height="18" rx="2" fill="none" stroke="${c}" stroke-width="2"/><rect x="21" y="1" width="6" height="18" rx="2" fill="${c}" opacity=".12"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      const grad = isV
+        ? ctx.createLinearGradient(x, y, x, y+h)
+        : ctx.createLinearGradient(x, y, x+w, y);
+      grad.addColorStop(0, color);
+      grad.addColorStop(0.5, adjustColor(color, 30));
+      grad.addColorStop(1, color);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, x, y, w, h, 4); ctx.stroke();
+      ctx.fillStyle = hexToRgba(color, 0.1);
+      roundRect(ctx, x, y, w, h, 4); ctx.fill();
+    }
+  },
+  {
+    name: '圆顶尖角',
+    icon: (c) => `<svg viewBox="0 0 28 20"><path d="M3,19 L3,6 Q5,4 7,6 L9,19 Z" fill="${c}"/><path d="M13,19 L13,10 Q15,8 17,10 L19,19 Z" fill="${c}"/><path d="M22,19 L22,3 Q24,1 26,3 L27,19 Z" fill="${c}"/></svg>`,
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      const r = Math.min(w * 0.5, 8);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if (isV) {
+        ctx.moveTo(x, y + h);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h);
+      } else {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x, y + h);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+  },
+  {
+    name: '阶梯堆叠',
+    icon: (c) => {
+      const c2 = adjustColor(c, -25);
+      return `<svg viewBox="0 0 28 20"><rect x="1" y="12" width="8" height="7" rx="1" fill="${c2}"/><rect x="1" y="4" width="8" height="8" rx="1" fill="${c}"/><rect x="11" y="13" width="8" height="6" rx="1" fill="${c2}"/><rect x="11" y="8" width="8" height="5" rx="1" fill="${c}"/><rect x="21" y="13" width="6" height="6" rx="1" fill="${c2}"/><rect x="21" y="1" width="6" height="12" rx="1" fill="${c}"/></svg>`;
+    },
+    drawBar: (ctx, x, y, w, h, color, dir) => {
+      const isV = dir === 'vertical';
+      const c2 = adjustColor(color, -25);
+      const seg = isV ? h * 0.4 : w * 0.4;
+      ctx.save();
+      roundRect(ctx, x, y, w, h, 3); ctx.clip();
+      if (isV) {
+        ctx.fillStyle = c2;
+        ctx.fillRect(x, y + h - seg, w, seg);
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h - seg);
+      } else {
+        ctx.fillStyle = c2;
+        ctx.fillRect(x, y, seg, h);
+        ctx.fillStyle = color;
+        ctx.fillRect(x + seg, y, w - seg, h);
+      }
+      ctx.restore();
+    }
+  }
+];
+
+
+// ── Color Palettes (each with bg, grid, text colors for chart background) ──
+// barText: color for value labels on top of bars
+const PALETTES = [
+  {
+    name: '梦幻紫', barText: '#e4e6f0',
+    bg: '#1a1028', grid: 'rgba(162,155,254,.1)', tickText: '#a29bfe', labelText: '#8b82be',
+    colors: ['#6c5ce7','#a29bfe','#74b9ff','#00cec9','#55efc4','#fdcb6e','#e17055','#ff6b6b','#fd79a8','#e84393','#0984e3','#00b894','#ffeaa7','#fab1a0','#636e72']
+  },
+  {
+    name: '日落橙', barText: '#e4e6f0',
+    bg: '#1f1410', grid: 'rgba(253,203,110,.1)', tickText: '#fdcb6e', labelText: '#c9a255',
+    colors: ['#e17055','#fdcb6e','#e84393','#d63031','#f39c12','#e74c3c','#ff7675','#fab1a0','#fd79a8','#dfe6e9','#b2bec3','#636e72','#2d3436','#00cec9','#55efc4']
+  },
+  {
+    name: '海洋蓝', barText: '#e4e6f0',
+    bg: '#0a1628', grid: 'rgba(116,185,255,.1)', tickText: '#74b9ff', labelText: '#5a8fc2',
+    colors: ['#0984e3','#74b9ff','#00cec9','#55efc4','#00b894','#6c5ce7','#a29bfe','#fdcb6e','#e17055','#ff6b6b','#fd79a8','#e84393','#636e72','#b2bec3','#dfe6e9']
+  },
+  {
+    name: '森林绿', barText: '#e4e6f0',
+    bg: '#0c1a14', grid: 'rgba(85,239,196,.1)', tickText: '#55efc4', labelText: '#3eaa8a',
+    colors: ['#00b894','#55efc4','#00cec9','#74b9ff','#0984e3','#6c5ce7','#a29bfe','#fdcb6e','#e17055','#ff6b6b','#fd79a8','#e84393','#636e72','#b2bec3','#dfe6e9']
+  },
+  {
+    name: '糖果色', barText: '#e4e6f0',
+    bg: '#1e1220', grid: 'rgba(253,121,168,.1)', tickText: '#fd79a8', labelText: '#c25e82',
+    colors: ['#fd79a8','#a29bfe','#74b9ff','#55efc4','#fdcb6e','#e17055','#ff6b6b','#e84393','#6c5ce7','#00cec9','#00b894','#0984e3','#fab1a0','#dfe6e9','#636e72']
+  },
+  {
+    name: '霓虹灯', barText: '#e4e6f0',
+    bg: '#120a1e', grid: 'rgba(255,107,107,.12)', tickText: '#ff6b6b', labelText: '#c25555',
+    colors: ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#01a3a4','#f368e0','#ff9f43','#ee5a24','#0abde3','#10ac84','#feca57','#c44569','#574b90']
+  },
+  {
+    name: '莫兰迪', barText: '#e4e6f0',
+    bg: '#1a1918', grid: 'rgba(184,169,201,.1)', tickText: '#b8a9c9', labelText: '#8a7e96',
+    colors: ['#b8a9c9','#d4b5a0','#a3b18a','#9db4c0','#c9ada7','#9a8c98','#c2b286','#b5838d','#6d6875','#e5989b','#ffb4a2','#b7b7a4','#a8a8a8','#cad2c5','#84a98c']
+  },
+  {
+    name: '暗夜金', barText: '#e4e6f0',
+    bg: '#141008', grid: 'rgba(249,202,36,.1)', tickText: '#f9ca24', labelText: '#b89a2a',
+    colors: ['#f9ca24','#f0932b','#eb4d4b','#6ab04c','#22a6b3','#be2edd','#4834d4','#130f40','#535c68','#f5cd79','#f19066','#e66767','#303952','#596275','#786fa6']
+  },
+  // ── Light palettes ──
+  {
+    name: '纯白简约', barText: '#2d3436',
+    bg: '#ffffff', grid: 'rgba(0,0,0,.07)', tickText: '#636e72', labelText: '#636e72',
+    colors: ['#6c5ce7','#0984e3','#00b894','#e17055','#fdcb6e','#e84393','#00cec9','#ff6b6b','#a29bfe','#55efc4','#74b9ff','#fd79a8','#fab1a0','#b2bec3','#636e72']
+  },
+  {
+    name: '浅灰优雅', barText: '#2d3436',
+    bg: '#f5f6fa', grid: 'rgba(0,0,0,.06)', tickText: '#636e72', labelText: '#636e72',
+    colors: ['#6c5ce7','#0984e3','#00b894','#e17055','#fdcb6e','#e84393','#00cec9','#ff6b6b','#a29bfe','#55efc4','#74b9ff','#fd79a8','#fab1a0','#b2bec3','#dfe6e9']
+  },
+  {
+    name: '暖阳米白', barText: '#3d3328',
+    bg: '#fdf8f0', grid: 'rgba(180,140,80,.1)', tickText: '#8a7a5a', labelText: '#8a7a5a',
+    colors: ['#e17055','#f39c12','#e84393','#d63031','#fdcb6e','#e74c3c','#ff7675','#fab1a0','#fd79a8','#00b894','#00cec9','#55efc4','#6c5ce7','#a29bfe','#636e72']
+  },
+  {
+    name: '薄荷清凉', barText: '#1a3a2a',
+    bg: '#f0faf6', grid: 'rgba(0,184,148,.1)', tickText: '#00b894', labelText: '#3d8a6a',
+    colors: ['#00b894','#55efc4','#00cec9','#0984e3','#74b9ff','#6c5ce7','#a29bfe','#fdcb6e','#e17055','#ff6b6b','#fd79a8','#e84393','#fab1a0','#b2bec3','#636e72']
+  },
+  {
+    name: '天空浅蓝', barText: '#1a2a3d',
+    bg: '#f0f6fd', grid: 'rgba(9,132,227,.08)', tickText: '#0984e3', labelText: '#4a7aa5',
+    colors: ['#0984e3','#74b9ff','#00cec9','#55efc4','#00b894','#6c5ce7','#a29bfe','#fdcb6e','#e17055','#ff6b6b','#fd79a8','#e84393','#fab1a0','#b2bec3','#636e72']
+  },
+  {
+    name: '樱花粉白', barText: '#3d2830',
+    bg: '#fef5f8', grid: 'rgba(232,67,147,.08)', tickText: '#e84393', labelText: '#b05a80',
+    colors: ['#e84393','#fd79a8','#a29bfe','#74b9ff','#55efc4','#fdcb6e','#e17055','#ff6b6b','#6c5ce7','#00cec9','#00b894','#0984e3','#fab1a0','#dfe6e9','#636e72']
+  }
+];
+
+// ── Init ──
+function init() {
+  buildPaletteGrid();
+  buildBarStyleGrid();
+}
+
+function buildPaletteGrid() {
+  const grid = document.getElementById('paletteGrid');
+  grid.innerHTML = '';
+  PALETTES.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'palette-card' + (i === currentPalette ? ' active' : '');
+    card.onclick = () => selectPalette(i);
+    const dots = document.createElement('div');
+    dots.className = 'palette-dots';
+    // First dot = background color
+    const bgDot = document.createElement('div');
+    bgDot.className = 'palette-dot';
+    bgDot.style.background = p.bg;
+    bgDot.style.outline = '1px solid rgba(128,128,128,.3)';
+    bgDot.style.outlineOffset = '-1px';
+    dots.appendChild(bgDot);
+    for (let j = 0; j < 4; j++) {
+      const dot = document.createElement('div');
+      dot.className = 'palette-dot';
+      dot.style.background = p.colors[j];
+      dots.appendChild(dot);
+    }
+    const name = document.createElement('div');
+    name.className = 'palette-name';
+    name.textContent = p.name;
+    card.appendChild(dots);
+    card.appendChild(name);
+    grid.appendChild(card);
+  });
+}
+
+function selectPalette(i) {
+  currentPalette = i;
+  document.querySelectorAll('.palette-card').forEach((c, j) => c.classList.toggle('active', j === i));
+  buildBarStyleGrid(); // refresh icons with new palette color
+  if (chartData) renderChart();
+}
+
+function buildBarStyleGrid() {
+  const grid = document.getElementById('barstyleGrid');
+  grid.innerHTML = '';
+  const pal = PALETTES[currentPalette];
+  const c = pal.colors[0];
+  BAR_STYLES.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'barstyle-card' + (i === currentBarStyle ? ' active' : '');
+    card.onclick = () => selectBarStyle(i);
+    const icon = document.createElement('div');
+    icon.className = 'barstyle-icon';
+    icon.innerHTML = s.icon(c);
+    const name = document.createElement('div');
+    name.className = 'barstyle-name';
+    name.textContent = s.name;
+    card.appendChild(icon);
+    card.appendChild(name);
+    grid.appendChild(card);
+  });
+}
+
+function selectBarStyle(i) {
+  currentBarStyle = i;
+  document.querySelectorAll('.barstyle-card').forEach((c, j) => c.classList.toggle('active', j === i));
+  if (chartData) renderChart();
+}
+
+// ── Controls ──
+function setDirection(dir, btn) {
+  direction = dir;
+  document.querySelectorAll('.dir-toggle .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (chartData) renderChart();
+}
+
+function getUnit() {
+  return document.getElementById('unitInput').value.trim();
+}
+
+function onUnitChange() {
+  updateUnitBadge();
+  if (chartData) draw(document.getElementById('chartCanvas'));
+}
+
+function getTitle() {
+  return document.getElementById('titleInput').value.trim();
+}
+
+function onTitleChange() {
+  updateUnitBadge();
+  if (chartData) draw(document.getElementById('chartCanvas'));
+}
+
+function updateUnitBadge() {
+  const unit = getUnit();
+  const badge = document.getElementById('unitBadge');
+  const fsBadge = document.getElementById('fsUnitBadge');
+  const fsUnit = document.getElementById('fsUnit');
+  const pal = PALETTES[currentPalette];
+  const isLight = isLightColor(pal.bg);
+  const title = getTitle();
+
+  // Position badge below title to avoid overlap
+  // Title area: ~32px when title exists, ~0 when no title
+  const badgeTop = title ? 34 : 8;
+  badge.style.top = badgeTop + 'px';
+  fsBadge.style.top = badgeTop + 'px';
+
+  if (unit) {
+    const text = '单位：' + unit;
+    badge.textContent = text;
+    badge.style.display = 'block';
+    badge.style.background = isLight ? 'rgba(255,255,255,.85)' : 'rgba(26,29,39,.85)';
+    badge.style.border = isLight ? '1px solid rgba(0,0,0,.1)' : '1px solid rgba(255,255,255,.1)';
+    badge.style.color = isLight ? pal.tickText : pal.tickText;
+
+    fsBadge.textContent = text;
+    fsBadge.style.display = 'block';
+    fsBadge.style.background = badge.style.background;
+    fsBadge.style.border = badge.style.border;
+    fsBadge.style.color = badge.style.color;
+
+    fsUnit.textContent = '（单位：' + unit + '）';
+  } else {
+    badge.style.display = 'none';
+    fsBadge.style.display = 'none';
+    fsUnit.textContent = '';
+  }
+}
+
+function isLightColor(hex) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substr(0,2),16);
+  const g = parseInt(c.substr(2,2),16);
+  const b = parseInt(c.substr(4,2),16);
+  return (r * 0.299 + g * 0.587 + b * 0.114) > 160;
+}
+
+function loadSample() {
+  const samples = [
+    { label: '一月', value: 120 },
+    { label: '二月', value: 98 },
+    { label: '三月', value: 156 },
+    { label: '四月', value: 88 },
+    { label: '五月', value: 145 },
+    { label: '六月', value: 178 },
+    { label: '七月', value: 201 },
+    { label: '八月', value: 167 },
+    { label: '九月', value: 134 },
+    { label: '十月', value: 189 },
+    { label: '十一月', value: 112 },
+    { label: '十二月', value: 143 }
+  ];
+  document.getElementById('jsonInput').value = JSON.stringify(samples, null, 2);
+  document.getElementById('unitInput').value = '万元';
+  document.getElementById('titleInput').value = '月度销售数据';
+  renderChart();
+}
+
+// ── Parse ──
+function parseData(input) {
+  let parsed = JSON.parse(input);
+  if (!Array.isArray(parsed)) throw new Error('请输入 JSON 数组');
+  if (parsed.length === 0) throw new Error('数组不能为空');
+  return parsed.map((item, i) => {
+    if (typeof item === 'number') return { label: `#${i+1}`, value: item };
+    if (typeof item === 'object' && item !== null) {
+      const val = item.value ?? item.v ?? item.y ?? item[Object.keys(item).find(k => typeof item[k] === 'number')] ?? 0;
+      const lbl = item.label ?? item.name ?? item.x ?? item.key ?? `#${i+1}`;
+      return { label: String(lbl), value: Number(val) };
+    }
+    return { label: String(item), value: Number(item) || 0 };
+  });
+}
+
+// ── Render ──
+function renderChart() {
+  const errEl = document.getElementById('errorMsg');
+  const canvas = document.getElementById('chartCanvas');
+  const empty = document.getElementById('emptyState');
+  const statsBar = document.getElementById('statsBar');
+  const toolbar = document.getElementById('chartToolbar');
+  try {
+    errEl.textContent = '';
+    const input = document.getElementById('jsonInput').value.trim();
+    if (!input) { errEl.textContent = '请输入数据'; return; }
+    chartData = parseData(input);
+    empty.style.display = 'none';
+    canvas.style.display = 'block';
+    toolbar.style.display = 'flex';
+    // Sync chart wrapper background with palette
+    document.getElementById('chartWrapper').style.background = PALETTES[currentPalette].bg;
+    document.getElementById('chartWrapper').style.borderRadius = '8px';
+    document.getElementById('chartWrapper').style.overflow = 'hidden';
+    draw(canvas);
+    updateStats();
+    updateUnitBadge();
+    statsBar.style.display = 'flex';
+    document.getElementById('chartDisclaimer').style.display = 'block';
+  } catch(e) {
+    errEl.textContent = e.message;
+    chartData = null;
+  }
+}
+
+function draw(canvas, overrideW, overrideH) {
+  const wrapper = overrideW ? null : document.getElementById('chartWrapper');
+  const dpr = window.devicePixelRatio || 1;
+  const W = overrideW || wrapper.clientWidth;
+  const H = overrideH || Math.max(360, Math.min(500, W * 0.6));
+
+  const pal = PALETTES[currentPalette];
+
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Fill chart background with palette bg
+  ctx.fillStyle = pal.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!chartData || chartData.length === 0) return;
+
+  const values = chartData.map(d => d.value);
+  const maxVal = Math.max(...values) * 1.1;
+  const title = getTitle();
+  const unit = getUnit();
+  const extraGlow = currentBarStyle === 6 ? 10 : 0; // neon glow extends beyond bars
+  const titleSpace = title ? 32 : 0;
+  // Extra space for unit badge below title
+  const unitSpace = (title && unit) ? 22 : 0;
+  const padding = { top: 30 + extraGlow + titleSpace + unitSpace, right: 30 + extraGlow, bottom: 60 + extraGlow, left: 60 };
+
+  // Draw title
+  if (title) {
+    ctx.fillStyle = pal.barText;
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, W / 2, 12);
+  }
+
+  if (direction === 'vertical') {
+    drawVertical(ctx, W, H, padding, maxVal, pal);
+  } else {
+    // Dynamically calculate left padding based on longest label
+    ctx.font = '11px sans-serif';
+    let maxLabelW = 0;
+    chartData.forEach(d => {
+      const w = ctx.measureText(d.label).width;
+      if (w > maxLabelW) maxLabelW = w;
+    });
+    // Cap at 40% of chart width to keep chart usable
+    const maxAllowed = W * 0.4;
+    padding.left = Math.min(maxAllowed, Math.max(60, maxLabelW + 20));
+    drawHorizontal(ctx, W, H, padding, maxVal, pal);
+  }
+}
+
+function drawVertical(ctx, W, H, pad, maxVal, pal) {
+  const n = chartData.length;
+  const colors = pal.colors;
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const gap = Math.max(4, Math.min(12, chartW / n * 0.2));
+  const barW = (chartW - gap * (n + 1)) / n;
+
+  barRects = [];
+
+  // Grid
+  ctx.strokeStyle = pal.grid;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + chartH - (chartH / 5) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = pal.tickText; ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(maxVal / 5 * i), pad.left - 8, y);
+  }
+
+  chartData.forEach((d, i) => {
+    const x = pad.left + gap + i * (barW + gap);
+    const barH = (d.value / maxVal) * chartH;
+    const y = pad.top + chartH - barH;
+    const color = colors[i % colors.length];
+
+    // Draw bar with selected style
+    BAR_STYLES[currentBarStyle].drawBar(ctx, x, y, barW, barH, color, 'vertical');
+
+    ctx.fillStyle = pal.barText; ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(d.value, x + barW/2, y - 5);
+
+    ctx.save();
+    ctx.translate(x + barW/2, pad.top + chartH + 10);
+    const rotated = barW < 50;
+    if (rotated) { ctx.rotate(-Math.PI / 4); ctx.textAlign = 'right'; }
+    ctx.fillStyle = pal.labelText; ctx.font = '11px sans-serif'; ctx.textBaseline = 'top';
+    // Smart truncation: use more chars if space allows
+    const maxChars = rotated ? 12 : Math.floor(barW / 11);
+    ctx.fillText(truncate(d.label, Math.max(4, maxChars)), 0, 0);
+    ctx.restore();
+
+    barRects.push({ x, y, w: barW, h: barH, d });
+  });
+}
+
+function drawHorizontal(ctx, W, H, pad, maxVal, pal) {
+  const n = chartData.length;
+  const colors = pal.colors;
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const gap = Math.max(4, Math.min(12, chartH / n * 0.2));
+  const barH = (chartH - gap * (n + 1)) / n;
+
+  barRects = [];
+
+  ctx.strokeStyle = pal.grid;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.left + (chartW / 5) * i;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, H - pad.bottom); ctx.stroke();
+    ctx.fillStyle = pal.tickText; ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(Math.round(maxVal / 5 * i), x, H - pad.bottom + 8);
+  }
+
+  chartData.forEach((d, i) => {
+    const y = pad.top + gap + i * (barH + gap);
+    const barW = (d.value / maxVal) * chartW;
+    const color = colors[i % colors.length];
+
+    // Draw bar with selected style
+    BAR_STYLES[currentBarStyle].drawBar(ctx, pad.left, y, barW, barH, color, 'horizontal');
+
+    ctx.fillStyle = pal.barText; ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(d.value, pad.left + barW + 6, y + barH/2);
+
+    ctx.fillStyle = pal.labelText; ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    // Only truncate if label doesn't fit in available space
+    const availW = pad.left - 12;
+    let lbl = d.label;
+    if (ctx.measureText(lbl).width > availW) {
+      while (lbl.length > 1 && ctx.measureText(lbl + '…').width > availW) {
+        lbl = lbl.slice(0, -1);
+      }
+      lbl += '…';
+    }
+    ctx.fillText(lbl, pad.left - 8, y + barH/2);
+
+    barRects.push({ x: pad.left, y, w: barW, h: barH, d });
+  });
+}
+
+// ── Fullscreen ──
+let fsHideTimer = null;
+
+function showFsHeader() {
+  const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
+  header.classList.remove('auto-hide');
+  clearTimeout(fsHideTimer);
+  fsHideTimer = setTimeout(() => {
+    if (isFullscreen) header.classList.add('auto-hide');
+  }, 3000);
+}
+
+function enterFullscreen() {
+  const wrapper = document.getElementById('fullscreenWrapper');
+  isFullscreen = true;
+  wrapper.classList.add('active');
+  updateUnitBadge();
+  const title = getTitle();
+  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
+  const pal = PALETTES[currentPalette];
+  wrapper.style.background = pal.bg;
+  // Set disclaimer color to match palette
+  const fsDisc = document.getElementById('fsDisclaimer');
+  fsDisc.style.color = pal.barText;
+  fsDisc.style.opacity = '0.45';
+  // Try native fullscreen API (hides browser chrome on desktop & mobile)
+  const el = wrapper;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) {
+    try { req.call(el); } catch(e) {}
+  }
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('fsCanvas');
+    const wrap = document.getElementById('fsCanvasWrap');
+    draw(canvas, wrap.clientWidth, wrap.clientHeight);
+  });
+  // Auto-hide header after 3s
+  showFsHeader();
+  wrapper.addEventListener('mousemove', showFsHeader);
+  wrapper.addEventListener('click', showFsHeader);
+  wrapper.addEventListener('touchstart', showFsHeader);
+}
+
+function exitFullscreen() {
+  isFullscreen = false;
+  clearTimeout(fsHideTimer);
+  const wrapper = document.getElementById('fullscreenWrapper');
+  wrapper.classList.remove('active');
+  // Remove auto-hide listeners
+  wrapper.removeEventListener('mousemove', showFsHeader);
+  wrapper.removeEventListener('click', showFsHeader);
+  wrapper.removeEventListener('touchstart', showFsHeader);
+  const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
+  header.classList.remove('auto-hide');
+  const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if (exit) {
+    try { exit.call(document); } catch(e) {}
+  }
+  // Redraw main canvas
+  if (chartData) draw(document.getElementById('chartCanvas'));
+}
+
+function toggleFullscreen() {
+  if (isFullscreen) {
+    exitFullscreen();
+  } else {
+    enterFullscreen();
+  }
+}
+
+// Sync state when user exits via browser controls (ESC, gesture, etc.)
+function onFullscreenChange() {
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+  if (!fsEl && isFullscreen) {
+    isFullscreen = false;
+    document.getElementById('fullscreenWrapper').classList.remove('active');
+    if (chartData) draw(document.getElementById('chartCanvas'));
+  }
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+document.addEventListener('mozfullscreenchange', onFullscreenChange);
+document.addEventListener('MSFullscreenChange', onFullscreenChange);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isFullscreen) exitFullscreen();
+});
+
+// ── Helpers ──
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function adjustColor(hex, amount) {
+  let c = hex.replace('#', '');
+  let r = Math.max(0, Math.min(255, parseInt(c.substr(0,2),16) + amount));
+  let g = Math.max(0, Math.min(255, parseInt(c.substr(2,2),16) + amount));
+  let b = Math.max(0, Math.min(255, parseInt(c.substr(4,2),16) + amount));
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+function truncate(str, max) {
+  return str.length > max ? str.slice(0, max) + '…' : str;
+}
+
+function hexToRgba(hex, alpha) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substr(0,2),16);
+  const g = parseInt(c.substr(2,2),16);
+  const b = parseInt(c.substr(4,2),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function updateStats() {
+  if (!chartData) return;
+  const vals = chartData.map(d => d.value);
+  document.getElementById('statCount').textContent = vals.length;
+  document.getElementById('statMax').textContent = Math.max(...vals);
+  document.getElementById('statMin').textContent = Math.min(...vals);
+  document.getElementById('statAvg').textContent = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+  document.getElementById('statSum').textContent = vals.reduce((a,b)=>a+b,0);
+}
+
+// ── Tooltip ──
+const chartCanvas = document.getElementById('chartCanvas');
+const tooltip = document.getElementById('tooltip');
+chartCanvas.addEventListener('mousemove', e => {
+  const rect = chartCanvas.getBoundingClientRect();
+  const scaleX = chartCanvas.width / (window.devicePixelRatio || 1) / rect.width;
+  const scaleY = chartCanvas.height / (window.devicePixelRatio || 1) / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  let hit = null;
+  for (const r of barRects) {
+    if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) { hit = r; break; }
+  }
+  if (hit) {
+    const unit = getUnit();
+    tooltip.classList.add('show');
+    document.getElementById('ttLabel').textContent = hit.d.label;
+    document.getElementById('ttValue').textContent = hit.d.value;
+    tooltip.style.left = (e.clientX - rect.left) + 'px';
+    tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+    tooltip.style.transform = 'translate(-50%, -100%)';
+  } else {
+    tooltip.classList.remove('show');
+  }
+});
+chartCanvas.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  if (chartData) draw(document.getElementById('chartCanvas'));
+  if (isFullscreen) {
+    const wrap = document.getElementById('fsCanvasWrap');
+    draw(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight);
+  }
+});
+
+init();
+</script>
+</body>
+</html>

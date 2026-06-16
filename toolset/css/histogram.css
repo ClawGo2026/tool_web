@@ -1,0 +1,51 @@
+/* Chart area */
+.chart-wrapper{position:relative;min-height:300px;}
+#chartCanvas{width:100%;height:auto;display:block;}
+
+/* Chart toolbar */
+.chart-toolbar{
+  display:flex; justify-content:flex-end; gap:8px;
+  margin-bottom:10px;
+}
+.toolbar-btn{
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; color:var(--text2); padding:6px 12px;
+  font-size:.75rem; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:5px;
+}
+.toolbar-btn:hover{border-color:var(--accent);color:var(--accent2);}
+
+/* Unit badge on chart — styled dynamically via JS */
+.unit-badge{
+  position:absolute; right:12px;
+  border-radius:6px; padding:4px 10px;
+  font-size:.75rem; font-weight:600;
+  pointer-events:none; backdrop-filter:blur(4px);
+  display:none; transition: all .3s;
+}
+
+/* Tooltip */
+.tooltip{
+  position:absolute; background:var(--surface2);
+  border:1px solid var(--border); border-radius:8px;
+  padding:8px 12px; font-size:.78rem;
+  pointer-events:none; opacity:0; transition:opacity .15s;
+  z-index:10; box-shadow:var(--shadow);
+}
+.tooltip.show{opacity:1;}
+.tooltip .tt-label{color:var(--text2);font-size:.7rem;}
+.tooltip .tt-value{color:var(--accent2);font-weight:700;font-size:.9rem;}
+
+.chart-disclaimer{
+  position:absolute; bottom:8px; right:12px;
+  font-size:.68rem; color:var(--text2);
+  opacity:.55; letter-spacing:.02em;
+  pointer-events:none;
+}
+
+.empty-state{
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; height:300px; color:var(--text2); gap:12px;
+}
+.empty-state svg{opacity:.3;}
+.empty-state p{font-size:.85rem;}

@@ -1,0 +1,69 @@
+/* Table wrapper */
+.table-wrapper {
+  position: relative;
+  overflow: auto;
+  max-height: 600px;
+}
+.table-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.table-disclaimer {
+  font-size: .68rem;
+  margin-top: 12px;
+  text-align: right;
+}
+
+/* Table toolbar */
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* Generic table styles (injected dynamically per palette+style, but base styles here) */
+.gen-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.gen-table th,
+.gen-table td {
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+.gen-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  font-weight: 600;
+  font-size: .78rem;
+  letter-spacing: .02em;
+  user-select: none;
+}
+.gen-table tbody tr {
+  transition: background .15s;
+}
+.gen-table td {
+  border-bottom: 1px solid transparent;
+}
+
+/* Column resize handle */
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 3;
+}
+.col-resize-handle:hover {
+  background: var(--accent);
+  opacity: .3;
+}
