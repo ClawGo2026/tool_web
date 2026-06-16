@@ -9,6 +9,7 @@ function switchTab(tab) {
   document.getElementById('linechart-panel').style.display = tab === 'linechart' ? 'flex' : 'none';
   document.getElementById('piechart-panel').style.display = tab === 'piechart' ? 'flex' : 'none';
   document.getElementById('table-panel').style.display = tab === 'table' ? 'flex' : 'none';
+  document.getElementById('bubblechart-panel').style.display = tab === 'bubblechart' ? 'flex' : 'none';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   // Exit fullscreen when switching tools to avoid stale overlay
   if (typeof isFullscreen !== 'undefined' && isFullscreen) {
@@ -16,6 +17,7 @@ function switchTab(tab) {
     if (tab !== 'table' && typeof exitFsTable === 'function') exitFsTable();
     if (tab !== 'linechart' && typeof exitFsLineChart === 'function') exitFsLineChart();
     if (tab !== 'piechart' && typeof exitFsPieChart === 'function') exitFsPieChart();
+    if (tab !== 'bubblechart' && typeof exitFsBubble === 'function') exitFsBubble();
   }
 }
 
@@ -33,11 +35,13 @@ function toggleFullscreen() {
     else if (currentTool === 'table' && typeof enterFsTable === 'function') enterFsTable();
     else if (currentTool === 'linechart' && typeof enterFsLineChart === 'function') enterFsLineChart();
     else if (currentTool === 'piechart' && typeof enterFsPieChart === 'function') enterFsPieChart();
+    else if (currentTool === 'bubblechart' && typeof enterFsBubble === 'function') enterFsBubble();
   } else {
     if (currentTool === 'histogram' && typeof exitFsHistogram === 'function') exitFsHistogram();
     else if (currentTool === 'table' && typeof exitFsTable === 'function') exitFsTable();
     else if (currentTool === 'linechart' && typeof exitFsLineChart === 'function') exitFsLineChart();
     else if (currentTool === 'piechart' && typeof exitFsPieChart === 'function') exitFsPieChart();
+    else if (currentTool === 'bubblechart' && typeof exitFsBubble === 'function') exitFsBubble();
   }
 }
 
@@ -48,6 +52,7 @@ document.addEventListener('keydown', e => {
     else if (currentTool === 'table' && typeof exitFsTable === 'function') exitFsTable();
     else if (currentTool === 'linechart' && typeof exitFsLineChart === 'function') exitFsLineChart();
     else if (currentTool === 'piechart' && typeof exitFsPieChart === 'function') exitFsPieChart();
+    else if (currentTool === 'bubblechart' && typeof exitFsBubble === 'function') exitFsBubble();
   }
 });
 
