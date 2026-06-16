@@ -1,7 +1,7 @@
 // ── Histogram Module ──
 import { H_PALETTES } from './palettes.js';
 import { BAR_STYLES } from './bar-styles.js';
-import { currentTool, isFullscreen, setIsFullscreen } from '../state.js';
+import { currentTool, isFullscreen, setIsFullscreen, setCurrentTool } from '../state.js';
 import { hexToRgba, isLightColor, truncate, roundRect, adjustColor } from '../utils.js';
 
 let direction = 'vertical';
@@ -325,7 +325,7 @@ function showFsHeaderH() {
 }
 
 export function enterFsHistogram() {
-  currentTool = 'histogram';
+  setCurrentTool('histogram');
   const wrapper = document.getElementById('fullscreenWrapper');
   setIsFullscreen(true);
   wrapper.classList.add('active');

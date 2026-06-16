@@ -1,7 +1,7 @@
 // ── Pie Chart Module ──
 import { P_PALETTES } from './palettes.js';
 import { PIE_STYLES } from './pie-styles.js';
-import { currentTool, isFullscreen, setIsFullscreen } from '../state.js';
+import { currentTool, isFullscreen, setIsFullscreen, setCurrentTool } from '../state.js';
 import { hexToRgba, truncate } from '../utils.js';
 
 export let pieChartData = null;
@@ -264,7 +264,7 @@ function showFsHeaderP() {
 }
 
 export function enterFsPieChart() {
-  currentTool = 'piechart';
+  setCurrentTool('piechart');
   setIsFullscreen(true);
   const wrapper = document.getElementById('fullscreenWrapper');
   wrapper.classList.add('active');

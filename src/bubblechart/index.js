@@ -1,6 +1,6 @@
 import { BUBBLE_PALETTES } from './palettes.js';
 import { LAYOUT_ALGORITHMS, calculateLayout } from './layout-algorithms.js';
-import { currentTool, isFullscreen, setIsFullscreen } from '../state.js';
+import { currentTool, isFullscreen, setIsFullscreen, setCurrentTool } from '../state.js';
 import { hexToRgba, isLightColor, truncate } from '../utils.js';
 
 // ── Bubble Chart State ──
@@ -268,7 +268,7 @@ export function enterFsBubble() {
   const wrapper = document.getElementById('fullscreenWrapper');
   bIsFullscreen = true;
   setIsFullscreen(true);
-  currentTool = 'bubblechart';
+  setCurrentTool('bubblechart');
   wrapper.classList.add('active');
   wrapper.style.background = 'var(--bg)';
 

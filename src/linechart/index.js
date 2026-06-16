@@ -1,7 +1,7 @@
 // ── Line Chart Module ──
 import { L_PALETTES } from './palettes.js';
 import { LINE_STYLES } from './line-styles.js';
-import { currentTool, isFullscreen, setIsFullscreen } from '../state.js';
+import { currentTool, isFullscreen, setIsFullscreen, setCurrentTool } from '../state.js';
 import { hexToRgba, truncate } from '../utils.js';
 
 export let lineChartData = null;
@@ -294,7 +294,7 @@ function showFsHeaderL() {
 }
 
 export function enterFsLineChart() {
-  currentTool = 'linechart';
+  setCurrentTool('linechart');
   const wrapper = document.getElementById('fullscreenWrapper');
   setIsFullscreen(true);
   wrapper.classList.add('active');

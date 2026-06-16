@@ -1,7 +1,7 @@
 // ── Table Module ──
 import { T_PALETTES } from './palettes.js';
 import { TABLE_STYLES } from './table-styles.js';
-import { currentTool, isFullscreen, setIsFullscreen } from '../state.js';
+import { currentTool, isFullscreen, setIsFullscreen, setCurrentTool } from '../state.js';
 
 let tableData = null;
 let tCurrentPalette = 0;
@@ -191,7 +191,7 @@ function showFsHeaderT() {
 }
 
 export function enterFsTable() {
-  currentTool = 'table';
+  setCurrentTool('table');
   const wrapper = document.getElementById('fullscreenWrapper');
   setIsFullscreen(true);
   wrapper.classList.add('active');
