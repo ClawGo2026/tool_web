@@ -331,8 +331,8 @@ export function enterFsHistogram() {
   wrapper.classList.add('active');
   updateUnitBadge();
   const title = getTitle();
-  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   document.getElementById('fsHeaderTitle').innerHTML = '📊 直方图 <span class="fs-unit" id="fsUnit"></span> <span class="fs-title" id="fsTitle"></span>';
+  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   const pal = H_PALETTES[hCurrentPalette];
   wrapper.style.background = pal.bg;
   const fsDisc = document.getElementById('fsDisclaimer');
@@ -365,8 +365,9 @@ export function exitFsHistogram() {
   wrapper.removeEventListener('touchstart', showFsHeaderH);
   const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
   header.classList.remove('auto-hide');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if (exit) { try { exit.call(document); } catch(e) {} }
+  if (fsEl && exit) { try { exit.call(document); } catch(e) {} }
   if (chartData) draw(document.getElementById('chartCanvas'));
 }
 

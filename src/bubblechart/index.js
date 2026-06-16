@@ -335,8 +335,9 @@ export function exitFsBubble() {
   setIsFullscreen(false);
   const wrapper = document.getElementById('fullscreenWrapper');
   wrapper.classList.remove('active');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if (exit) { try { exit.call(document); } catch(e) {} }
+  if (fsEl && exit) { try { exit.call(document); } catch(e) {} }
   // Redraw normal canvas
   if (bubbleData) renderBubbleChart();
 }

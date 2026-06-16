@@ -269,8 +269,8 @@ export function enterFsPieChart() {
   const wrapper = document.getElementById('fullscreenWrapper');
   wrapper.classList.add('active');
   const title = getPTitle();
-  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   document.getElementById('fsHeaderTitle').innerHTML = '🥧 饼图 <span class="fs-title" id="fsTitle"></span>';
+  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   const pal = P_PALETTES[pCurrentPalette];
   wrapper.style.background = pal.bg;
   document.getElementById('fsCanvasWrap').style.display = 'block';
@@ -299,8 +299,9 @@ export function exitFsPieChart() {
   wrapper.removeEventListener('touchstart', showFsHeaderP);
   const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
   header.classList.remove('auto-hide');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if (exit) { try { exit.call(document); } catch(e) {} }
+  if (fsEl && exit) { try { exit.call(document); } catch(e) {} }
   if (pieChartData) drawPie(document.getElementById('pieCanvas'));
 }
 

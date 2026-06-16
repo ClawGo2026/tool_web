@@ -300,8 +300,8 @@ export function enterFsLineChart() {
   wrapper.classList.add('active');
   updateLUnitBadge();
   const title = getLTitle();
-  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   document.getElementById('fsHeaderTitle').innerHTML = '📈 折线图 <span class="fs-unit" id="fsUnit"></span> <span class="fs-title" id="fsTitle"></span>';
+  document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   const pal = L_PALETTES[lCurrentPalette];
   wrapper.style.background = pal.bg;
   const fsDisc = document.getElementById('fsDisclaimer');
@@ -333,8 +333,9 @@ export function exitFsLineChart() {
   wrapper.removeEventListener('touchstart', showFsHeaderL);
   const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
   header.classList.remove('auto-hide');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if (exit) { try { exit.call(document); } catch(e) {} }
+  if (fsEl && exit) { try { exit.call(document); } catch(e) {} }
   if (lineChartData) drawLineChart(document.getElementById('lChartCanvas'));
 }
 

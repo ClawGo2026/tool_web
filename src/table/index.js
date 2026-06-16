@@ -224,8 +224,9 @@ export function exitFsTable() {
   wrapper.removeEventListener('touchstart', showFsHeaderT);
   const header = document.querySelector('#fullscreenWrapper .fullscreen-header');
   header.classList.remove('auto-hide');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
   const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if (exit) { try { exit.call(document); } catch(e) {} }
+  if (fsEl && exit) { try { exit.call(document); } catch(e) {} }
 }
 
 function toggleFsTable() {
