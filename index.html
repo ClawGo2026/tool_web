@@ -27,22 +27,36 @@
   <!-- Input Panel -->
   <div class="panel panel-input">
     <div class="panel-title">数据输入</div>
-    <textarea id="jsonInput" placeholder='输入 JSON 数组，例如：
+    <div class="textarea-wrap">
+      <textarea id="jsonInput" placeholder='单系列数据：
 [
   {"label": "苹果", "value": 35},
-  {"label": "香蕉", "value": 28},
-  {"label": "橙子", "value": 42}
+  {"label": "香蕉", "value": 28}
 ]
 
-或简单数值数组：
-[12, 45, 23, 67, 34, 89, 56]'></textarea>
+多系列数据（分组对比）：
+{
+  "labels": ["Q1","Q2","Q3","Q4"],
+  "series": [
+    {"name": "产品A", "data": [120,98,156,88]},
+    {"name": "产品B", "data": [80,110,130,145]}
+  ]
+}'></textarea>
+      <button class="copy-btn" onclick="copyInput('jsonInput')" title="复制数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+    </div>
     <div class="error-msg" id="errorMsg"></div>
     <div class="controls">
       <button class="btn btn-primary" onclick="renderChart()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
         生成图表
       </button>
-      <button class="btn btn-sample" onclick="loadSample()">📊 示例数据</button>
+      <div class="sample-wrap">
+        <button class="btn btn-sample" onclick="toggleSampleMenu(this)">📊 示例数据 ▾</button>
+        <div class="sample-dropdown">
+          <div class="sample-dropdown-item" onclick="loadSample('single')">单系列数据</div>
+          <div class="sample-dropdown-item" onclick="loadSample('multi')">多系列数据</div>
+        </div>
+      </div>
     </div>
     <div class="controls" style="margin-top:8px;">
       <span style="font-size:.78rem;color:var(--text2);">方向：</span>
@@ -88,6 +102,7 @@
       <div class="unit-badge" id="unitBadge"></div>
       <div class="tooltip" id="tooltip">
         <div class="tt-label" id="ttLabel"></div>
+        <div class="tt-series" id="ttSeries" style="display:none;color:var(--text2);font-size:.68rem;margin-top:2px;"></div>
         <div class="tt-value" id="ttValue"></div>
       </div>
       <div class="chart-disclaimer" id="chartDisclaimer" style="display:none;">* 数据来源于网络，仅供参考</div>
@@ -109,24 +124,37 @@
   <!-- Input Panel -->
   <div class="panel panel-input">
     <div class="panel-title">数据输入</div>
-    <textarea id="lJsonInput" placeholder='输入 JSON 数组，例如：
+    <div class="textarea-wrap">
+      <textarea id="lJsonInput" placeholder='单系列折线图：
 [
   {"label": "1月", "value": 120},
   {"label": "2月", "value": 98},
-  {"label": "3月", "value": 156},
-  {"label": "4月", "value": 88},
-  {"label": "5月", "value": 145}
+  {"label": "3月", "value": 156}
 ]
 
-或简单数值数组：
-[12, 45, 23, 67, 34, 89, 56]'></textarea>
+多系列折线图（多条线对比）：
+{
+  "labels": ["1月","2月","3月","4月"],
+  "series": [
+    {"name": "产品A", "data": [120, 98, 156, 88]},
+    {"name": "产品B", "data": [80, 110, 130, 145]}
+  ]
+}'></textarea>
+      <button class="copy-btn" onclick="copyInput('lJsonInput')" title="复制数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+    </div>
     <div class="error-msg" id="lErrorMsg"></div>
     <div class="controls">
       <button class="btn btn-primary" onclick="renderLineChart()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3,17 9,11 14,15 21,7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="21,7 21,14 14,14" stroke-linecap="round" stroke-linejoin="round"/></svg>
         生成图表
       </button>
-      <button class="btn btn-sample" onclick="loadLSample()">📊 示例数据</button>
+      <div class="sample-wrap">
+        <button class="btn btn-sample" onclick="toggleSampleMenu(this)">📊 示例数据 ▾</button>
+        <div class="sample-dropdown">
+          <div class="sample-dropdown-item" onclick="loadLSample('single')">单系列数据</div>
+          <div class="sample-dropdown-item" onclick="loadLSample('multi')">多系列数据</div>
+        </div>
+      </div>
     </div>
     <div class="unit-row">
       <label>图表标题：</label>
@@ -165,6 +193,7 @@
       <div class="unit-badge" id="lUnitBadge"></div>
       <div class="tooltip" id="lTooltip">
         <div class="tt-label" id="lTtLabel"></div>
+        <div class="tt-series" id="lTtSeries" style="display:none;color:var(--text2);font-size:.68rem;margin-top:2px;"></div>
         <div class="tt-value" id="lTtValue"></div>
       </div>
       <div class="chart-disclaimer" id="lChartDisclaimer" style="display:none;">* 数据来源于网络，仅供参考</div>
@@ -186,7 +215,8 @@
   <!-- Input Panel -->
   <div class="panel panel-input">
     <div class="panel-title">数据输入</div>
-    <textarea id="pJsonInput" placeholder='输入 JSON 数组，例如：
+    <div class="textarea-wrap">
+      <textarea id="pJsonInput" placeholder='输入 JSON 数组，例如：
 [
   {"label": "苹果", "value": 35},
   {"label": "香蕉", "value": 28},
@@ -196,6 +226,8 @@
 
 或简单数值数组：
 [35, 28, 42, 20, 15]'></textarea>
+      <button class="copy-btn" onclick="copyInput('pJsonInput')" title="复制数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+    </div>
     <div class="error-msg" id="pErrorMsg"></div>
     <div class="controls">
       <button class="btn btn-primary" onclick="renderPieChart()">
@@ -255,7 +287,8 @@
   <!-- Input Panel -->
   <div class="panel panel-input">
     <div class="panel-title">数据输入</div>
-    <textarea id="bJsonInput" placeholder='输入 JSON 对象，例如：
+    <div class="textarea-wrap">
+      <textarea id="bJsonInput" placeholder='输入 JSON 对象，例如：
 {
   "苹果": 35,
   "香蕉": 28,
@@ -263,6 +296,8 @@
   "葡萄": 15,
   "西瓜": 50
 }'></textarea>
+      <button class="copy-btn" onclick="copyInput('bJsonInput')" title="复制数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+    </div>
     <div class="error-msg" id="bErrorMsg"></div>
     <div class="controls">
       <button class="btn btn-primary" onclick="renderBubbleChart()">
@@ -325,12 +360,15 @@
   <!-- Input Panel -->
   <div class="panel panel-input">
     <div class="panel-title">数据输入</div>
-    <textarea id="tJsonInput" placeholder='输入 JSON 数组，例如：
+    <div class="textarea-wrap">
+      <textarea id="tJsonInput" placeholder='输入 JSON 数组，例如：
 [
   {"姓名": "张三", "年龄": 28, "城市": "北京"},
   {"姓名": "李四", "年龄": 35, "城市": "上海"},
   {"姓名": "王五", "年龄": 42, "城市": "深圳"}
 ]'></textarea>
+      <button class="copy-btn" onclick="copyInput('tJsonInput')" title="复制数据"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+    </div>
     <div class="error-msg" id="tErrorMsg"></div>
     <div class="controls">
       <button class="btn btn-primary" onclick="renderTable()">

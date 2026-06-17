@@ -137,35 +137,66 @@ function updateUnitBadge() {
   }
 }
 
-function loadSample() {
-  const samples = [
-    { label: '一月', value: 120 }, { label: '二月', value: 98 },
-    { label: '三月', value: 156 }, { label: '四月', value: 88 },
-    { label: '五月', value: 145 }, { label: '六月', value: 178 },
-    { label: '七月', value: 201 }, { label: '八月', value: 167 },
-    { label: '九月', value: 134 }, { label: '十月', value: 189 },
-    { label: '十一月', value: 112 }, { label: '十二月', value: 143 }
-  ];
-  document.getElementById('jsonInput').value = JSON.stringify(samples, null, 2);
-  document.getElementById('unitInput').value = '万元';
-  document.getElementById('titleInput').value = '月度销售数据';
+function loadSample(type) {
+  if (type === 'multi') {
+    const sample = {
+      labels: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+      series: [
+        { name: '产品A', data: [120, 98, 156, 88, 145, 178, 201, 167, 134, 189, 112, 143] },
+        { name: '产品B', data: [80, 110, 130, 145, 120, 98, 165, 180, 155, 140, 125, 158] },
+        { name: '产品C', data: [45, 67, 89, 102, 95, 78, 120, 135, 110, 98, 85, 120] }
+      ]
+    };
+    document.getElementById('jsonInput').value = JSON.stringify(sample, null, 2);
+    document.getElementById('unitInput').value = '万元';
+    document.getElementById('titleInput').value = '多产品月度销售对比';
+  } else {
+    const samples = [
+      { label: '一月', value: 120 }, { label: '二月', value: 98 },
+      { label: '三月', value: 156 }, { label: '四月', value: 88 },
+      { label: '五月', value: 145 }, { label: '六月', value: 178 },
+      { label: '七月', value: 201 }, { label: '八月', value: 167 },
+      { label: '九月', value: 134 }, { label: '十月', value: 189 },
+      { label: '十一月', value: 112 }, { label: '十二月', value: 143 }
+    ];
+    document.getElementById('jsonInput').value = JSON.stringify(samples, null, 2);
+    document.getElementById('unitInput').value = '万元';
+    document.getElementById('titleInput').value = '月度销售数据';
+  }
   renderChart();
 }
 
 // ── Parse ──
 function parseData(input) {
   let parsed = JSON.parse(input);
-  if (!Array.isArray(parsed)) throw new Error('请输入 JSON 数组');
-  if (parsed.length === 0) throw new Error('数组不能为空');
-  return parsed.map((item, i) => {
-    if (typeof item === 'number') return { label: `#${i+1}`, value: item };
-    if (typeof item === 'object' && item !== null) {
-      const val = item.value ?? item.v ?? item.y ?? item[Object.keys(item).find(k => typeof item[k] === 'number')] ?? 0;
-      const lbl = item.label ?? item.name ?? item.x ?? item.key ?? `#${i+1}`;
-      return { label: String(lbl), value: Number(val) };
-    }
-    return { label: String(item), value: Number(item) || 0 };
-  });
+  // Multi-series: { labels: [...], series: [{name, data:[...]}, ...] }
+  if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed.labels && parsed.series) {
+    return {
+      labels: parsed.labels,
+      series: parsed.series.map(s => ({
+        name: s.name || '系列',
+        data: s.data.map(v => Number(v))
+      }))
+    };
+  }
+  // Single series: [{label, value}, ...] or [val, val, ...]
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) throw new Error('数组不能为空');
+    const items = parsed.map((item, i) => {
+      if (typeof item === 'number') return { label: `#${i+1}`, value: item };
+      if (typeof item === 'object' && item !== null) {
+        const val = item.value ?? item.v ?? item.y ?? item[Object.keys(item).find(k => typeof item[k] === 'number')] ?? 0;
+        const lbl = item.label ?? item.name ?? item.x ?? item.key ?? `#${i+1}`;
+        return { label: String(lbl), value: Number(val) };
+      }
+      return { label: String(item), value: Number(item) || 0 };
+    });
+    return {
+      labels: items.map(d => d.label),
+      series: [{ name: '系列1', data: items.map(d => d.value) }]
+    };
+  }
+  throw new Error('格式不正确，请输入正确的JSON数据');
 }
 
 // ── Render ──
@@ -211,15 +242,21 @@ export function draw(canvas, overrideW, overrideH) {
   ctx.scale(dpr, dpr);
   ctx.fillStyle = pal.bg;
   ctx.fillRect(0, 0, W, H);
-  if (!chartData || chartData.length === 0) return;
-  const values = chartData.map(d => d.value);
-  const maxVal = Math.max(...values) * 1.1;
+  if (!chartData) return;
+
+  const labels = chartData.labels;
+  const seriesList = chartData.series;
+  const numSeries = seriesList.length;
+  const isMulti = numSeries > 1;
+  const allVals = seriesList.flatMap(s => s.data);
+  const maxVal = Math.max(...allVals) * 1.12;
   const title = getTitle();
   const unit = getUnit();
   const extraGlow = currentBarStyle === 6 ? 10 : 0;
   const titleSpace = title ? 32 : 0;
   const unitSpace = (title && unit) ? 22 : 0;
-  const padding = { top: 30 + extraGlow + titleSpace + unitSpace, right: 30 + extraGlow, bottom: 60 + extraGlow, left: 60 };
+  const legendSpace = isMulti ? 28 : 0;
+  const padding = { top: 30 + extraGlow + titleSpace + unitSpace + legendSpace, right: 30 + extraGlow, bottom: 60 + extraGlow, left: 60 };
   if (title) {
     ctx.fillStyle = pal.barText;
     ctx.font = 'bold 15px sans-serif';
@@ -227,24 +264,43 @@ export function draw(canvas, overrideW, overrideH) {
     ctx.textBaseline = 'top';
     ctx.fillText(title, W / 2, 12);
   }
+  // Legend
+  if (isMulti) {
+    const legendY = padding.top - legendSpace + 8;
+    const legendItemW = 80;
+    const totalW = numSeries * legendItemW;
+    let lx = W / 2 - totalW / 2;
+    seriesList.forEach((s, si) => {
+      const color = pal.colors[si % pal.colors.length];
+      ctx.fillStyle = color;
+      roundRect(ctx, lx, legendY, 10, 6, 2); ctx.fill();
+      ctx.fillStyle = pal.barText; ctx.font = '11px sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(truncate(s.name, 10), lx + 14, legendY + 3);
+      lx += legendItemW;
+    });
+  }
   if (direction === 'vertical') {
-    drawVertical(ctx, W, H, padding, maxVal, pal);
+    drawVertical(ctx, W, H, padding, maxVal, pal, labels, seriesList, isMulti);
   } else {
     ctx.font = '11px sans-serif';
     let maxLabelW = 0;
-    chartData.forEach(d => { const w = ctx.measureText(d.label).width; if (w > maxLabelW) maxLabelW = w; });
+    labels.forEach(lbl => { const w = ctx.measureText(String(lbl)).width; if (w > maxLabelW) maxLabelW = w; });
     padding.left = Math.min(W * 0.4, Math.max(60, maxLabelW + 20));
-    drawHorizontal(ctx, W, H, padding, maxVal, pal);
+    drawHorizontal(ctx, W, H, padding, maxVal, pal, labels, seriesList, isMulti);
   }
 }
 
-function drawVertical(ctx, W, H, pad, maxVal, pal) {
-  const n = chartData.length;
+function drawVertical(ctx, W, H, pad, maxVal, pal, labels, seriesList, isMulti) {
+  const n = labels.length;
+  const numSeries = seriesList.length;
   const colors = pal.colors;
   const chartW = W - pad.left - pad.right;
   const chartH = H - pad.top - pad.bottom;
-  const gap = Math.max(4, Math.min(12, chartW / n * 0.2));
-  const barW = (chartW - gap * (n + 1)) / n;
+  const groupGap = Math.max(4, Math.min(10, chartW / n * 0.12));
+  const innerGap = isMulti ? Math.max(1, Math.min(4, chartW / (n * numSeries) * 0.08)) : 0;
+  const groupW = (chartW - groupGap * (n + 1)) / n;
+  const barW = isMulti ? (groupW - innerGap * (numSeries + 1)) / numSeries : groupW * 0.7;
   barRects = [];
   ctx.strokeStyle = pal.grid;
   ctx.lineWidth = 1;
@@ -255,34 +311,44 @@ function drawVertical(ctx, W, H, pad, maxVal, pal) {
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     ctx.fillText(Math.round(maxVal / 5 * i), pad.left - 8, y);
   }
-  chartData.forEach((d, i) => {
-    const x = pad.left + gap + i * (barW + gap);
-    const barH = (d.value / maxVal) * chartH;
-    const y = pad.top + chartH - barH;
-    const color = colors[i % colors.length];
-    BAR_STYLES[currentBarStyle].drawBar(ctx, x, y, barW, barH, color, 'vertical');
-    ctx.fillStyle = pal.barText; ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(d.value, x + barW/2, y - 5);
+  labels.forEach((lbl, gi) => {
+    const groupX = pad.left + groupGap + gi * (groupW + groupGap);
+    seriesList.forEach((s, si) => {
+      const v = s.data[gi];
+      const barH = (v / maxVal) * chartH;
+      const x = isMulti ? groupX + innerGap + si * (barW + innerGap) : groupX + (groupW - barW) / 2;
+      const y = pad.top + chartH - barH;
+      const color = colors[si % colors.length];
+      BAR_STYLES[currentBarStyle].drawBar(ctx, x, y, barW, barH, color, 'vertical');
+      if (!isMulti || numSeries === 1) {
+        ctx.fillStyle = pal.barText; ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(v, x + barW/2, y - 3);
+      }
+      barRects.push({ x, y, w: barW, h: barH, d: { label: lbl, value: v, seriesName: s.name } });
+    });
+    // Group label
     ctx.save();
-    ctx.translate(x + barW/2, pad.top + chartH + 10);
-    const rotated = barW < 50;
+    ctx.translate(groupX + groupW / 2, pad.top + chartH + 10);
+    const rotated = groupW < 50;
     if (rotated) { ctx.rotate(-Math.PI / 4); ctx.textAlign = 'right'; }
     ctx.fillStyle = pal.labelText; ctx.font = '11px sans-serif'; ctx.textBaseline = 'top';
-    const maxChars = rotated ? 12 : Math.floor(barW / 11);
-    ctx.fillText(truncate(d.label, Math.max(4, maxChars)), 0, 0);
+    const maxChars = rotated ? 10 : Math.floor(groupW / 9);
+    ctx.fillText(truncate(String(lbl), Math.max(4, maxChars)), 0, 0);
     ctx.restore();
-    barRects.push({ x, y, w: barW, h: barH, d });
   });
 }
 
-function drawHorizontal(ctx, W, H, pad, maxVal, pal) {
-  const n = chartData.length;
+function drawHorizontal(ctx, W, H, pad, maxVal, pal, labels, seriesList, isMulti) {
+  const n = labels.length;
+  const numSeries = seriesList.length;
   const colors = pal.colors;
   const chartW = W - pad.left - pad.right;
   const chartH = H - pad.top - pad.bottom;
-  const gap = Math.max(4, Math.min(12, chartH / n * 0.2));
-  const barH = (chartH - gap * (n + 1)) / n;
+  const groupGap = Math.max(4, Math.min(10, chartH / n * 0.12));
+  const innerGap = isMulti ? Math.max(1, Math.min(3, chartH / (n * numSeries) * 0.06)) : 0;
+  const groupH = (chartH - groupGap * (n + 1)) / n;
+  const barH = isMulti ? (groupH - innerGap * (numSeries + 1)) / numSeries : groupH * 0.65;
   barRects = [];
   ctx.strokeStyle = pal.grid;
   ctx.lineWidth = 1;
@@ -293,24 +359,31 @@ function drawHorizontal(ctx, W, H, pad, maxVal, pal) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(Math.round(maxVal / 5 * i), x, H - pad.bottom + 8);
   }
-  chartData.forEach((d, i) => {
-    const y = pad.top + gap + i * (barH + gap);
-    const barW = (d.value / maxVal) * chartW;
-    const color = colors[i % colors.length];
-    BAR_STYLES[currentBarStyle].drawBar(ctx, pad.left, y, barW, barH, color, 'horizontal');
-    ctx.fillStyle = pal.barText; ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(d.value, pad.left + barW + 6, y + barH/2);
+  labels.forEach((lbl, gi) => {
+    const groupY = pad.top + groupGap + gi * (groupH + groupGap);
+    seriesList.forEach((s, si) => {
+      const v = s.data[gi];
+      const barW_val = (v / maxVal) * chartW;
+      const y = isMulti ? groupY + innerGap + si * (barH + innerGap) : groupY + (groupH - barH) / 2;
+      const color = colors[si % colors.length];
+      BAR_STYLES[currentBarStyle].drawBar(ctx, pad.left, y, barW_val, barH, color, 'horizontal');
+      if (!isMulti || numSeries === 1) {
+        ctx.fillStyle = pal.barText; ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(v, pad.left + barW_val + 6, y + barH/2);
+      }
+      barRects.push({ x: pad.left, y, w: barW_val, h: barH, d: { label: lbl, value: v, seriesName: s.name } });
+    });
+    // Group label
     ctx.fillStyle = pal.labelText; ctx.font = '11px sans-serif';
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     const availW = pad.left - 12;
-    let lbl = d.label;
-    if (ctx.measureText(lbl).width > availW) {
-      while (lbl.length > 1 && ctx.measureText(lbl + '…').width > availW) { lbl = lbl.slice(0, -1); }
-      lbl += '…';
+    let displayLbl = String(lbl);
+    if (ctx.measureText(displayLbl).width > availW) {
+      while (displayLbl.length > 1 && ctx.measureText(displayLbl + '…').width > availW) displayLbl = displayLbl.slice(0, -1);
+      displayLbl += '…';
     }
-    ctx.fillText(lbl, pad.left - 8, y + barH/2);
-    barRects.push({ x: pad.left, y, w: barW, h: barH, d });
+    ctx.fillText(displayLbl, pad.left - 8, groupY + groupH / 2);
   });
 }
 
@@ -378,12 +451,12 @@ function toggleFsHistogram() {
 
 function updateStats() {
   if (!chartData) return;
-  const vals = chartData.map(d => d.value);
-  document.getElementById('statCount').textContent = vals.length;
-  document.getElementById('statMax').textContent = Math.max(...vals);
-  document.getElementById('statMin').textContent = Math.min(...vals);
-  document.getElementById('statAvg').textContent = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
-  document.getElementById('statSum').textContent = vals.reduce((a,b)=>a+b,0);
+  const allVals = chartData.series.flatMap(s => s.data);
+  document.getElementById('statCount').textContent = allVals.length;
+  document.getElementById('statMax').textContent = Math.max(...allVals);
+  document.getElementById('statMin').textContent = Math.min(...allVals);
+  document.getElementById('statAvg').textContent = (allVals.reduce((a,b)=>a+b,0)/allVals.length).toFixed(1);
+  document.getElementById('statSum').textContent = allVals.reduce((a,b)=>a+b,0);
 }
 
 // ── Tooltip ──
@@ -400,6 +473,13 @@ function updateStats() {
     if (hit) {
       tooltip.classList.add('show');
       document.getElementById('ttLabel').textContent = hit.d.label;
+      const ttSeriesEl = document.getElementById('ttSeries');
+      if (hit.d.seriesName && chartData && chartData.series.length > 1) {
+        ttSeriesEl.textContent = hit.d.seriesName;
+        ttSeriesEl.style.display = 'block';
+      } else {
+        ttSeriesEl.style.display = 'none';
+      }
       document.getElementById('ttValue').textContent = hit.d.value;
       tooltip.style.left = (e.clientX - rect.left) + 'px';
       tooltip.style.top = (e.clientY - rect.top - 10) + 'px';

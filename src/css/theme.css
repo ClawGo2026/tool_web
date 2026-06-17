@@ -109,6 +109,35 @@ textarea::placeholder{color:var(--text2);opacity:.6;}
 }
 .btn-sample:hover{border-color:var(--green);color:var(--green);}
 
+/* Copy button for textarea */
+.textarea-wrap{position:relative;}
+.copy-btn{
+  position:absolute; top:8px; right:8px; z-index:2;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; padding:5px 6px; cursor:pointer;
+  color:var(--text2); transition:all .2s;
+  display:flex; align-items:center; justify-content:center;
+  opacity:.6;
+}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent2);opacity:1;}
+.copy-btn.copied{border-color:var(--green);color:var(--green);opacity:1;}
+
+/* Sample dropdown */
+.sample-wrap{position:relative;display:inline-block;}
+.sample-dropdown{
+  display:none; position:absolute; left:0; top:100%;
+  margin-top:4px; z-index:20; min-width:140px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; box-shadow:var(--shadow); overflow:hidden;
+}
+.sample-dropdown.open{display:block;}
+.sample-dropdown-item{
+  padding:8px 14px; font-size:.78rem; cursor:pointer;
+  color:var(--text2); transition:background .15s;
+  white-space:nowrap;
+}
+.sample-dropdown-item:hover{background:var(--surface2);color:var(--accent2);}
+
 /* Direction toggle */
 .dir-toggle{
   display:flex; background:var(--surface2);

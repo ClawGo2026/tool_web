@@ -124,35 +124,66 @@ function updateLUnitBadge() {
   if (fsUnit) fsUnit.textContent = unit ? '（单位：' + unit + '）' : '';
 }
 
-function loadLSample() {
-  const samples = [
-    { label: '1月', value: 120 }, { label: '2月', value: 98 },
-    { label: '3月', value: 156 }, { label: '4月', value: 88 },
-    { label: '5月', value: 145 }, { label: '6月', value: 178 },
-    { label: '7月', value: 201 }, { label: '8月', value: 167 },
-    { label: '9月', value: 134 }, { label: '10月', value: 189 },
-    { label: '11月', value: 112 }, { label: '12月', value: 143 }
-  ];
-  document.getElementById('lJsonInput').value = JSON.stringify(samples, null, 2);
-  document.getElementById('lUnitInput').value = '万元';
-  document.getElementById('lTitleInput').value = '月度趋势';
+function loadLSample(type) {
+  if (type === 'multi') {
+    const sample = {
+      labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+      series: [
+        { name: '产品A', data: [120, 98, 156, 88, 145, 178, 201, 167, 134, 189, 112, 143] },
+        { name: '产品B', data: [80, 110, 130, 145, 120, 98, 165, 180, 155, 140, 125, 158] },
+        { name: '产品C', data: [45, 67, 89, 102, 95, 78, 120, 135, 110, 98, 85, 120] }
+      ]
+    };
+    document.getElementById('lJsonInput').value = JSON.stringify(sample, null, 2);
+    document.getElementById('lUnitInput').value = '万元';
+    document.getElementById('lTitleInput').value = '多产品月度趋势对比';
+  } else {
+    const samples = [
+      { label: '1月', value: 120 }, { label: '2月', value: 98 },
+      { label: '3月', value: 156 }, { label: '4月', value: 88 },
+      { label: '5月', value: 145 }, { label: '6月', value: 178 },
+      { label: '7月', value: 201 }, { label: '8月', value: 167 },
+      { label: '9月', value: 134 }, { label: '10月', value: 189 },
+      { label: '11月', value: 112 }, { label: '12月', value: 143 }
+    ];
+    document.getElementById('lJsonInput').value = JSON.stringify(samples, null, 2);
+    document.getElementById('lUnitInput').value = '万元';
+    document.getElementById('lTitleInput').value = '月度趋势';
+  }
   renderLineChart();
 }
 
 // ── Parse ──
 function parseLData(input) {
   let parsed = JSON.parse(input);
-  if (!Array.isArray(parsed)) throw new Error('请输入 JSON 数组');
-  if (parsed.length === 0) throw new Error('数组不能为空');
-  return parsed.map((item, i) => {
-    if (typeof item === 'number') return { label: `#${i+1}`, value: item };
-    if (typeof item === 'object' && item !== null) {
-      const val = item.value ?? item.v ?? item.y ?? item[Object.keys(item).find(k => typeof item[k] === 'number')] ?? 0;
-      const lbl = item.label ?? item.name ?? item.x ?? item.key ?? `#${i+1}`;
-      return { label: String(lbl), value: Number(val) };
-    }
-    return { label: String(item), value: Number(item) || 0 };
-  });
+  // Multi-series: { labels: [...], series: [{name, data:[...]}, ...] }
+  if (!Array.isArray(parsed) && typeof parsed === 'object' && parsed.labels && parsed.series) {
+    return {
+      labels: parsed.labels,
+      series: parsed.series.map(s => ({
+        name: s.name || '系列',
+        data: s.data.map(v => Number(v))
+      }))
+    };
+  }
+  // Single series
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) throw new Error('数组不能为空');
+    const items = parsed.map((item, i) => {
+      if (typeof item === 'number') return { label: `#${i+1}`, value: item };
+      if (typeof item === 'object' && item !== null) {
+        const val = item.value ?? item.v ?? item.y ?? item[Object.keys(item).find(k => typeof item[k] === 'number')] ?? 0;
+        const lbl = item.label ?? item.name ?? item.x ?? item.key ?? `#${i+1}`;
+        return { label: String(lbl), value: Number(val) };
+      }
+      return { label: String(item), value: Number(item) || 0 };
+    });
+    return {
+      labels: items.map(d => d.label),
+      series: [{ name: '系列1', data: items.map(d => d.value) }]
+    };
+  }
+  throw new Error('格式不正确，请输入正确的JSON数据');
 }
 
 // ── Render ──
@@ -199,14 +230,19 @@ export function drawLineChart(canvas, overrideW, overrideH) {
   ctx.scale(dpr, dpr);
   ctx.fillStyle = pal.bg;
   ctx.fillRect(0, 0, W, H);
-  if (!lineChartData || lineChartData.length === 0) return;
+  if (!lineChartData) return;
 
-  const values = lineChartData.map(d => d.value);
-  const maxVal = Math.max(...values) * 1.1;
-  const minVal = Math.min(0, Math.min(...values));
+  const labels = lineChartData.labels;
+  const seriesList = lineChartData.series;
+  const numSeries = seriesList.length;
+  const isMulti = numSeries > 1;
+  const allVals = seriesList.flatMap(s => s.data);
+  const maxVal = Math.max(...allVals) * 1.1;
+  const minVal = Math.min(0, Math.min(...allVals));
   const range = maxVal - minVal;
   const title = getLTitle();
-  const padding = { top: 30 + (title ? 32 : 0), right: 30, bottom: 50, left: 60 };
+  const legendSpace = isMulti ? 28 : 0;
+  const padding = { top: 30 + (title ? 32 : 0) + legendSpace, right: 30, bottom: 50, left: 60 };
   const chartW = W - padding.left - padding.right;
   const chartH = H - padding.top - padding.bottom;
 
@@ -216,6 +252,25 @@ export function drawLineChart(canvas, overrideW, overrideH) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(title, W / 2, 12);
+  }
+
+  // Legend
+  if (isMulti) {
+    const legendY = padding.top - legendSpace + 8;
+    const legendItemW = 80;
+    const totalW = numSeries * legendItemW;
+    let lx = W / 2 - totalW / 2;
+    seriesList.forEach((s, si) => {
+      const color = pal.colors[si % pal.colors.length];
+      ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(lx, legendY + 3); ctx.lineTo(lx + 10, legendY + 3); ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(lx + 5, legendY + 3, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = pal.lineText; ctx.font = '11px sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(truncate(s.name, 10), lx + 14, legendY + 3);
+      lx += legendItemW;
+    });
   }
 
   // Grid
@@ -236,24 +291,18 @@ export function drawLineChart(canvas, overrideW, overrideH) {
   }
 
   // X labels
-  const n = lineChartData.length;
+  const n = labels.length;
   const gap = chartW / (n + 1);
   lDotRects = [];
-  const points = [];
-  lineChartData.forEach((d, i) => {
-    const x = padding.left + gap * (i + 1);
-    const y = padding.top + chartH - ((d.value - minVal) / range) * chartH;
-    points.push({ x, y, d });
 
-    // Label
+  labels.forEach((lbl, i) => {
+    const x = padding.left + gap * (i + 1);
     ctx.fillStyle = pal.labelText;
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     const maxChars = Math.floor(gap / 11);
-    ctx.fillText(truncate(d.label, Math.max(4, maxChars)), x, padding.top + chartH + 10);
-
-    // X grid tick
+    ctx.fillText(truncate(String(lbl), Math.max(4, maxChars)), x, padding.top + chartH + 10);
     ctx.strokeStyle = pal.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -262,24 +311,35 @@ export function drawLineChart(canvas, overrideW, overrideH) {
     ctx.stroke();
   });
 
-  // Draw line
-  const color = pal.colors[0];
+  // Draw each series line
   const lineStyle = LINE_STYLES[lCurrentLineStyle];
   const isArea = lCurrentLineStyle === 3 || lCurrentLineStyle === 4;
-  if (isArea) {
-    lineStyle.drawLine(ctx, points, color, pal.bg, chartH, padding.top);
-  } else {
-    lineStyle.drawLine(ctx, points, color, pal.bg);
-  }
+  seriesList.forEach((s, si) => {
+    const color = pal.colors[si % pal.colors.length];
+    const points = [];
+    s.data.forEach((v, i) => {
+      const x = padding.left + gap * (i + 1);
+      const y = padding.top + chartH - ((v - minVal) / range) * chartH;
+      points.push({ x, y, d: { label: labels[i], value: v, seriesName: s.name } });
+    });
 
-  // Value labels on dots
-  points.forEach(p => {
-    ctx.fillStyle = pal.lineText;
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(p.d.value, p.x, p.y - 8);
-    lDotRects.push({ x: p.x, y: p.y, r: 8, d: p.d });
+    if (isArea) {
+      lineStyle.drawLine(ctx, points, color, pal.bg, chartH, padding.top);
+    } else {
+      lineStyle.drawLine(ctx, points, color, pal.bg);
+    }
+
+    // Value labels and hit rects
+    points.forEach(p => {
+      if (!isMulti || numSeries === 1) {
+        ctx.fillStyle = pal.lineText;
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(p.d.value, p.x, p.y - 8);
+      }
+      lDotRects.push({ x: p.x, y: p.y, r: 8, d: p.d });
+    });
   });
 }
 
@@ -342,12 +402,12 @@ export function exitFsLineChart() {
 // ── Stats ──
 function updateLStats() {
   if (!lineChartData) return;
-  const vals = lineChartData.map(d => d.value);
-  document.getElementById('lStatCount').textContent = vals.length;
-  document.getElementById('lStatMax').textContent = Math.max(...vals);
-  document.getElementById('lStatMin').textContent = Math.min(...vals);
-  document.getElementById('lStatAvg').textContent = (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
-  document.getElementById('lStatSum').textContent = vals.reduce((a, b) => a + b, 0);
+  const allVals = lineChartData.series.flatMap(s => s.data);
+  document.getElementById('lStatCount').textContent = allVals.length;
+  document.getElementById('lStatMax').textContent = Math.max(...allVals);
+  document.getElementById('lStatMin').textContent = Math.min(...allVals);
+  document.getElementById('lStatAvg').textContent = (allVals.reduce((a, b) => a + b, 0) / allVals.length).toFixed(1);
+  document.getElementById('lStatSum').textContent = allVals.reduce((a, b) => a + b, 0);
 }
 
 // ── Tooltip ──
@@ -369,6 +429,13 @@ function updateLStats() {
     if (hit) {
       tooltip.classList.add('show');
       document.getElementById('lTtLabel').textContent = hit.d.label;
+      const ttSeriesEl = document.getElementById('lTtSeries');
+      if (hit.d.seriesName && lineChartData && lineChartData.series.length > 1) {
+        ttSeriesEl.textContent = hit.d.seriesName;
+        ttSeriesEl.style.display = 'block';
+      } else {
+        ttSeriesEl.style.display = 'none';
+      }
       document.getElementById('lTtValue').textContent = hit.d.value;
       tooltip.style.left = (e.clientX - rect.left) + 'px';
       tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
