@@ -24,17 +24,24 @@ function buildBPaletteGrid() {
     const card = document.createElement('div');
     card.className = 'palette-card' + (i === bCurrentPalette ? ' active' : '');
     card.onclick = () => selectBPalette(i);
-    const preview = document.createElement('div');
-    preview.className = 'palette-preview';
-    p.colors.slice(0, 5).forEach(c => {
-      const d = document.createElement('div');
-      d.style.background = c;
-      preview.appendChild(d);
-    });
+    const dots = document.createElement('div');
+    dots.className = 'palette-dots';
+    const bgDot = document.createElement('div');
+    bgDot.className = 'palette-dot';
+    bgDot.style.background = p.bg;
+    bgDot.style.outline = '1px solid rgba(128,128,128,.3)';
+    bgDot.style.outlineOffset = '-1px';
+    dots.appendChild(bgDot);
+    for (let j = 0; j < 4; j++) {
+      const dot = document.createElement('div');
+      dot.className = 'palette-dot';
+      dot.style.background = p.colors[j];
+      dots.appendChild(dot);
+    }
     const name = document.createElement('div');
     name.className = 'palette-name';
     name.textContent = p.name;
-    card.appendChild(preview);
+    card.appendChild(dots);
     card.appendChild(name);
     grid.appendChild(card);
   });
@@ -142,6 +149,11 @@ export function renderBubbleChart() {
 
     // Draw bubbles
     const pal = BUBBLE_PALETTES[bCurrentPalette];
+    wrapper.style.background = pal.bg;
+    wrapper.style.borderRadius = '8px';
+    wrapper.style.overflow = 'hidden';
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, canvasW, canvasH);
     bubblePositions.forEach((p, i) => {
       const color = pal.colors[i % pal.colors.length];
 
@@ -270,7 +282,7 @@ export function enterFsBubble() {
   setIsFullscreen(true);
   setCurrentTool('bubblechart');
   wrapper.classList.add('active');
-  wrapper.style.background = 'var(--bg)';
+  wrapper.style.background = BUBBLE_PALETTES[bCurrentPalette].bg;
   const fsBadge = document.getElementById('fsUnitBadge');
   if (fsBadge) { fsBadge.style.display = 'none'; fsBadge.textContent = ''; }
 
