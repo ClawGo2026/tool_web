@@ -382,7 +382,11 @@ function updateLStats() {
 
 // ── Resize ──
 window.addEventListener('resize', () => {
-  if (lineChartData) drawLineChart(document.getElementById('lChartCanvas'));
+  if (currentTool === 'linechart' && lineChartData) drawLineChart(document.getElementById('lChartCanvas'));
+  if (isFullscreen && currentTool === 'linechart') {
+    const wrap = document.getElementById('fsCanvasWrap');
+    drawLineChart(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight);
+  }
 });
 
 // ── Expose to window for HTML onclick ──

@@ -411,8 +411,8 @@ function updateStats() {
 
 // ── Resize ──
 window.addEventListener('resize', () => {
-  if (chartData) draw(document.getElementById('chartCanvas'));
-  if (isFullscreen) { const wrap = document.getElementById('fsCanvasWrap'); draw(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight); }
+  if (currentTool === 'histogram' && chartData) draw(document.getElementById('chartCanvas'));
+  if (isFullscreen && currentTool === 'histogram') { const wrap = document.getElementById('fsCanvasWrap'); draw(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight); }
 });
 
 // ── Expose to window for HTML onclick handlers ──

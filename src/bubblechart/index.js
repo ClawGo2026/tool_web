@@ -258,7 +258,7 @@ let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = setTimeout(() => {
-    if (bubbleData) renderBubbleChart();
+    if (currentTool === 'bubblechart' && bubbleData) renderBubbleChart();
   }, 200);
 });
 
@@ -271,6 +271,8 @@ export function enterFsBubble() {
   setCurrentTool('bubblechart');
   wrapper.classList.add('active');
   wrapper.style.background = 'var(--bg)';
+  const fsBadge = document.getElementById('fsUnitBadge');
+  if (fsBadge) { fsBadge.style.display = 'none'; fsBadge.textContent = ''; }
 
   // Copy canvas to fullscreen
   const fsCanvas = document.getElementById('fsCanvas');
@@ -321,7 +323,7 @@ export function enterFsBubble() {
   }
 
   // Update header
-  document.getElementById('fsHeaderTitle').textContent = '🫧 气泡图';
+  document.getElementById('fsHeaderTitle').innerHTML = '🫧 气泡图 <span class="fs-title" id="fsTitle"></span>';
   document.getElementById('fsTitle').textContent = getTitle();
 
   // Try native fullscreen

@@ -69,5 +69,30 @@ export const P_PALETTES = [
     name: '樱花粉白', text: '#3d2830',
     bg: '#fef5f8', labelText: '#7a4a5a',
     colors: ['#e84393','#fd79a8','#a29bfe','#74b9ff','#55efc4','#fdcb6e','#e17055','#ff6b6b','#6c5ce7','#00cec9','#00b894','#0984e3','#fab1a0','#b2bec3','#636e72']
+  },
+  {
+    name: '薰衣草紫', text: '#2d2040',
+    bg: '#f5f0ff', labelText: '#5a4a80',
+    colors: ['#6c5ce7','#a29bfe','#dfe6e9','#fd79a8','#74b9ff','#00cec9','#fdcb6e','#e17055','#55efc4','#ff6b6b','#0984e3','#e84393','#b2bec3','#fab1a0','#636e72']
+  },
+  {
+    name: '柠檬清新', text: '#3d3a10',
+    bg: '#fefef2', labelText: '#6a6a2a',
+    colors: ['#fdcb6e','#f9ca24','#f0932b','#e17055','#00b894','#0984e3','#6c5ce7','#e84393','#74b9ff','#55efc4','#ff6b6b','#a29bfe','#00cec9','#fab1a0','#636e72']
+  },
+  {
+    name: '蜜桃暖粉', text: '#3d2828',
+    bg: '#fff5f2', labelText: '#7a4a4a',
+    colors: ['#fab1a0','#ff7675','#fd79a8','#e17055','#fdcb6e','#ff6b6b','#e84393','#f39c12','#f0932b','#55efc4','#74b9ff','#a29bfe','#6c5ce7','#b2bec3','#636e72']
+  },
+  {
+    name: '青瓷素雅', text: '#1a3030',
+    bg: '#f2fafa', labelText: '#3a5a5a',
+    colors: ['#00cec9','#55efc4','#00b894','#74b9ff','#0984e3','#81ecec','#a29bfe','#6c5ce7','#fdcb6e','#e17055','#fab1a0','#ff6b6b','#fd79a8','#dfe6e9','#636e72']
+  },
+  {
+    name: '奶茶柔和', text: '#3d2d1a',
+    bg: '#faf5ef', labelText: '#6a5a3a',
+    colors: ['#d4b5a0','#c9ada7','#b5838d','#e5989b','#ffb4a2','#c2b286','#a3b18a','#9db4c0','#b8a9c9','#9a8c98','#84a98c','#cad2c5','#e17055','#fdcb6e','#636e72']
   }
 ];

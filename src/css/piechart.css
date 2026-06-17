@@ -28,7 +28,7 @@
 }
 .piestyle-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 6px;
 }
 .piestyle-card {
@@ -51,7 +51,7 @@
   box-shadow: 0 0 0 1px var(--accent);
 }
 .piestyle-name {
-  font-size: .62rem;
+  font-size: .65rem;
   color: var(--text2);
   text-align: center;
 }

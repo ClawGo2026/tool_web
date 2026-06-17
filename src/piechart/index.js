@@ -273,6 +273,8 @@ export function enterFsPieChart() {
   document.getElementById('fsTitle').textContent = title ? '— ' + title : '';
   const pal = P_PALETTES[pCurrentPalette];
   wrapper.style.background = pal.bg;
+  const fsBadge = document.getElementById('fsUnitBadge');
+  if (fsBadge) { fsBadge.style.display = 'none'; fsBadge.textContent = ''; }
   document.getElementById('fsCanvasWrap').style.display = 'block';
   document.getElementById('fsContent').style.display = 'none';
   const el = wrapper;
@@ -347,14 +349,11 @@ export function exitFsPieChart() {
 
 // ── Resize ──
 window.addEventListener('resize', () => {
-  const resizePie = () => {
-    if (pieChartData) drawPie(document.getElementById('pieCanvas'));
-    if (isFullscreen && currentTool === 'piechart') {
-      const wrap = document.getElementById('fsCanvasWrap');
-      drawPie(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight);
-    }
-  };
-  resizePie();
+  if (currentTool === 'piechart' && pieChartData) drawPie(document.getElementById('pieCanvas'));
+  if (isFullscreen && currentTool === 'piechart') {
+    const wrap = document.getElementById('fsCanvasWrap');
+    drawPie(document.getElementById('fsCanvas'), wrap.clientWidth, wrap.clientHeight);
+  }
 });
 
 // ── Window exports for HTML onclick ──
