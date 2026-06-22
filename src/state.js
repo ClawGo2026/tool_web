@@ -1,5 +1,5 @@
 // Shared application state
-export let currentTool = 'histogram';
+export let currentTool = 'home';
 export let isFullscreen = false;
 
 export function setCurrentTool(tool) {

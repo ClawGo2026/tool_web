@@ -271,3 +271,49 @@ textarea::placeholder{color:var(--text2);opacity:.6;}
 .fullscreen-content {
   flex:1; overflow:auto; min-height:0;
 }
+
+/* ═══════════════════════════════════════════════
+     HOME PAGE — tool card grid
+     ═══════════════════════════════════════════════ */
+.home-page{max-width:720px;margin:0 auto;padding:0 20px 40px}
+.home-category{margin-bottom:28px}
+.home-cat-title{
+  font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text2);margin-bottom:14px;
+  display:flex;align-items:center;gap:6px;
+}
+.home-cat-title::before{
+  content:'';width:3px;height:14px;
+  background:var(--accent);border-radius:2px;
+}
+.home-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:12px;
+}
+.home-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 16px;
+  cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  text-decoration:none;
+}
+.home-card:hover{
+  border-color:var(--accent);transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(108,92,231,.18);
+}
+.home-card-icon{
+  width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(108,92,231,.12);color:var(--accent2);
+}
+.home-card-icon svg{display:block}
+.home-card-name{font-size:.85rem;font-weight:600;color:var(--text);text-align:center}
+
+/* Home back button in header */
+.home-back{
+  background:none;border:none;color:var(--text2);cursor:pointer;
+  padding:6px 10px;border-radius:8px;transition:all .2s;
+  display:flex;align-items:center;gap:4px;font-size:.82rem;font-weight:500;
+}
+.home-back:hover{color:var(--accent2);background:rgba(108,92,231,.1)}
+.home-back svg{display:block}

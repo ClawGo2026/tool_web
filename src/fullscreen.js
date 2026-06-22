@@ -8,6 +8,7 @@ async function enterForTool(tool) {
     case 'piechart': return (await import('./piechart/index.js')).enterFsPieChart();
     case 'bubblechart': return (await import('./bubblechart/index.js')).enterFsBubble();
     case 'table': return (await import('./table/index.js')).enterFsTable();
+    case 'note': return; // Note tool has no fullscreen
   }
 }
 
@@ -19,6 +20,7 @@ async function exitForTool(tool) {
     case 'piechart': return (await import('./piechart/index.js')).exitFsPieChart();
     case 'bubblechart': return (await import('./bubblechart/index.js')).exitFsBubble();
     case 'table': return (await import('./table/index.js')).exitFsTable();
+    case 'note': return; // Note tool has no fullscreen
   }
 }
 

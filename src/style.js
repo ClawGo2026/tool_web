@@ -5,3 +5,4 @@ import './css/linechart.css';
 import './css/piechart.css';
 import './css/bubblechart.css';
 import './css/table.css';
+import './css/note.css';

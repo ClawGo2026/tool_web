@@ -6,6 +6,7 @@ import { initLineChart } from './linechart/index.js';
 import { initPieChart } from './piechart/index.js';
 import { initBubbleChart } from './bubblechart/index.js';
 import { initTable } from './table/index.js';
+import { initNote } from './note/index.js';
 
 // ── Global copy & dropdown helpers ──
 window.copyInput = function(textareaId) {
@@ -45,6 +46,9 @@ function boot() {
   initLineChart();
   initPieChart();
   initBubbleChart();
+  initNote();
+  // Start on home page
+  switchTab('home');
 }
 
 if (document.readyState === 'loading') {
