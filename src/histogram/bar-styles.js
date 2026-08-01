@@ -57,7 +57,7 @@ export const BAR_STYLES = [
     },
     drawBar: (ctx, x, y, w, h, color, dir) => {
       const isV = dir === 'vertical';
-      const depth = Math.max(3, w * 0.2);
+      const depth = Math.max(3, (isV ? w : h) * 0.2);
       const dark = adjustColor(color, -40);
       if (isV) {
         ctx.fillStyle = dark;
